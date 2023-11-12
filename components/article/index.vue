@@ -1,7 +1,12 @@
 <template>
-	<z-paging ref="paging" v-model="content" @query="getData" :auto="false">
+	<z-paging ref="paging" v-model="content" @query="getData" :auto="false" safe-area-inset-bottom
+		use-safe-area-placeholder>
+		<view style="margin: 20rpx;">
+			<u-swiper height="160" :list="swiperList" keyName="image" :autoplay="false" circular
+				@click="swiperTap"></u-swiper>
+		</view>
 		<block v-for="(item,index) in content" :key="index">
-			<view
+			<view @click="goArticle(item)"
 				style="margin:20rpx 20rpx 0rpx 20rpx;padding:20rpx;box-shadow: 2rpx 2rpx 6rpx 2rpx #f1f1f1;border-radius: 20rpx;">
 				<article-header :data="item"></article-header>
 				<article-content :data="item"></article-content>
@@ -15,6 +20,7 @@
 	import articleHeader from '@/components/article/header.vue';
 	import articleContent from '@/components/article/content.vue';
 	import articleFooter from '@/components/article/footer.vue';
+
 	import swiper from '../../uni_modules/uview-ui/libs/config/props/swiper';
 	export default {
 		components: {
@@ -31,6 +37,10 @@
 			tabbar: {
 				type: [Number, String],
 				default: 0,
+			},
+			waterFall: {
+				type: [Boolean, String],
+				default: false,
 			}
 		},
 		watch: {
@@ -51,10 +61,12 @@
 			return {
 				content: [],
 				is_loaded: false,
+				swiperList: [],
+
 			};
 		},
 		created() {
-			console.log(this.swiper, this.tabbar)
+			this.getSwiper()
 		},
 		methods: {
 			getData(page, limit) {
@@ -70,7 +82,32 @@
 					if (res.statusCode == 200) {
 						this.$refs.paging.complete(res.data.data);
 						this.is_loaded = true
-						console.log(res)
+					}
+				})
+			},
+			getSwiper() {
+				this.$http.get('/typechoContents/contentsList', {
+					params: {
+						searchParams: JSON.stringify({
+							isswiper: 1
+						})
+					}
+				}).then(res => {
+					const data = res.data.data
+					data.forEach(item => {
+						item.image = item.images[0]
+						this.swiperList.push({
+							...item
+						});
+					});
+				})
+			},
+			swiperTap(index) {
+				uni.setStorageSync(`article_${this.swiperList[index].cid}`, this.swiperList[index])
+				this.$Router.push({
+					path: '/pages/article/article',
+					query: {
+						id: this.swiperList[index].cid
 					}
 				})
 			},

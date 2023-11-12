@@ -1,8 +1,9 @@
 <template>
 	<z-paging-swiper>
-		<swiper style="height: 100%;">
+		<swiper style="height: 100%;" :current="swiperIndex" @animationfinish="animationfinish">
 			<swiper-item v-show="!loading">
-				<z-paging refresher-only>
+				<z-paging ref="paging" v-model="comments" @query="getComments" :auto-scroll-to-top-when-reload="false"
+					:auto-clean-list-when-reload="false">
 					<template #top>
 						<u-navbar placeholder autoBack @rightClick="showMore = true" fixed>
 							<view slot="right">
@@ -17,40 +18,103 @@
 					</view>
 					<!-- 评论区 -->
 					<u-gap height="10" bgColor="#f7f8f7"></u-gap>
+					<!-- #ifdef APP -->
+					<u-sticky bgColor="#fff">
+						<u-tabs :list="commentTab" :current="commentTabIndex" lineColor="#FB7299"
+							:activeStyle="{color: '#303133',fontWeight: 'bold',transform: 'scale(1.05)'}"
+							:inactiveStyle="{color: '#606266',transform: 'scale(1)'}"
+							:itemStyle="{fontSize:'16rpx',height:'30px'}" lineHeight="3" @change="changTab"></u-tabs>
+					</u-sticky>
+					<!-- #endif -->
+					<!-- #ifndef APP -->
+					<u-sticky bgColor="#fff" offsetTop="-44">
+						<u-tabs :list="commentTab" :current="commentTabIndex" lineColor="#FB7299"
+							:activeStyle="{color: '#303133',fontWeight: 'bold',transform: 'scale(1.05)'}"
+							:inactiveStyle="{color: '#606266',transform: 'scale(1)'}"
+							:itemStyle="{fontSize:'16rpx',height:'30px'}" lineHeight="3" @change="changTab"></u-tabs>
+					</u-sticky>
+					<!-- #endif -->
+					<view style="margin: 20rpx;">
+						<!-- 开始 -->
+						<block v-for="(item,index) in comments" v-if="comments">
+							<view style="margin:10rpx 0">
+								<comment :data="item" @subComment="subComment = $event;showSub =true"
+									@reply="pid = $event.coid;showComment =true"></comment>
+							</view>
+						</block>
+					</view>
 					<template #bottom>
 						<u-row customStyle="margin:20rpx" justify="space-between">
 							<u-col span="6">
-								<view>
-									<u-input prefix-icon="edit-pen" border="none" placeholder="说点什么..."
-										class="u-info-light-bg" customStyle="padding:6rpx 10rpx;border-radius:50rpx" />
-								</view>
+								<u-row customStyle="padding:14rpx 14rpx;border-radius: 50rpx;"
+									class="u-info-light-bg u-info" @click="showComment = true">
+									<u-icon name="edit-pen" size="20"></u-icon>
+									<text style="margin-left:10rpx;font-size: 28rpx;">说点什么</text>
+								</u-row>
 							</u-col>
 							<u-col span="5">
-								<u-row customStyle="margin-left:20rpx;flex:1" justify="space-between">
+								<u-row customStyle="margin-left:20rpx;flex:1" justify="space-around">
 									<view style="display: flex; flex-direction: column;align-items: center;">
 										<u-icon name="rmb-circle" size="18"></u-icon>
-										<u-text text="发电" size="10"></u-text>
+										<u-text text="发电" size="12"></u-text>
 									</view>
 									<view style="display: flex; flex-direction: column;align-items: center;">
 										<u-icon name="star" size="20"></u-icon>
-										<u-text text="收藏" size="10"></u-text>
+										<u-text text="收藏" size="12"></u-text>
 									</view>
-									
+
 									<view style="display: flex; flex-direction: column;align-items: center;">
 										<u-icon name="thumb-up" size="20"></u-icon>
-										<u-text text="点赞" size="10"></u-text>
+										<u-text text="点赞" size="12"></u-text>
 									</view>
 								</u-row>
 							</u-col>
 						</u-row>
 					</template>
-				</z-paging>
 
+				</z-paging>
 			</swiper-item>
-			<swiper-item></swiper-item>
+			<swiper-item>
+				<z-paging refresher-only ref="author">
+					<template #top>
+						<u-navbar :bgColor="`rgba(255,255,255,0)`" placeholder
+							@leftClick="swiperIndex = 0;$u.toast(swiperIndex)" @rightClick="showMore = true" fixed>
+							<view slot="right">
+								<u-icon name="more-dot-fill"></u-icon>
+							</view>
+						</u-navbar>
+					</template>
+				</z-paging>
+			</swiper-item>
 		</swiper>
-		<u-loading-page :loading="loading"></u-loading-page>
+		<!-- <u-loading-page :loading="loading"></u-loading-page> -->
 		<!-- 页面公用组件 -->
+		<!-- 回复文章 -->
+		<u-popup :show="showComment" @close="showComment = false;pid = 0" round="20"
+			:customStyle="{paddingBottom:keyboardHeight+'px',padding:30+'rpx'}">
+			<u--textarea :adjustPosition="false" :cursorSpacing="40" type="textarea" v-model="commentText"
+				placeholder="灵感迸发" border="none"
+				customStyle="background:#f7f8f7;padding:4rpx 10rpx;border-radius:20rpx"></u--textarea>
+			<u-row customStyle="margin-top:10rpx" justify="space-between">
+				<u-col span="6">
+					<u-row justify="space-between">
+						<block v-for="(item,index) in cBtn" :key="index">
+							<u-icon :name="item.icon" size="20" @click="cBtnTap(item.name)"></u-icon>
+						</block>
+					</u-row>
+				</u-col>
+				<view>
+					<u-button shape="circle" color="#FB7299" customStyle="padding:4rpx,6rpx" size="mini" text="发送"
+						@click="reply"></u-button>
+				</view>
+			</u-row>
+			<!-- 隐藏面板 -->
+			<block v-if="showComemntBtn == '表情'">
+				<!-- 这里加表情 -->
+				<!-- ui -->
+				表情
+			</block>
+		</u-popup>
 		<!-- 分享&&管理弹窗 -->
 		<u-popup :show="showMore" @close="showMore = false" customStyle="padding:30rpx" round="20">
 			<u-row justify="space-between" style="border-bottom:1px solid #f7f8f7;padding-bottom: 30rpx;">
@@ -72,6 +136,14 @@
 				</u-col>
 			</u-row>
 		</u-popup>
+		<!-- 子评论 -->
+		<u-popup :show="showSub" @close="showSub = false"  round="20" closeable>
+			<u-gap height="25"></u-gap>
+			<view style="height: 75vh;">
+				<subComment :data="subComment"></subComment>
+			</view>
+			
+		</u-popup>
 	</z-paging-swiper>
 </template>
 
@@ -79,20 +151,42 @@
 	import articleHeader from '@/pages/article/components/header.vue';
 	import articleContent from '@/pages/article/components/content.vue';
 	import articleFooter from '@/pages/article/components/footer.vue';
+	import comment from '@/pages/article/components/comments/comment.vue';
+	import subComment from '@/pages/article/components/comments/subComment.vue';
 	export default {
 		components: {
 			articleHeader,
 			articleContent,
-			articleFooter
+			articleFooter,
+			comment,
+			subComment,
 		},
 		data() {
 			return {
 				cid: 0,
+				pid: 0,
 				article: null,
 				comments: [],
 				author: null,
+				subComment: null,
 				loading: true,
 				showMore: false,
+				showComment: false,
+				showComemntBtn: null,
+				commentText: '',
+				commentTabIndex: 0,
+				swiperIndex: 0,
+				commentId: 0,
+				showSub: false,
+				commentTab: [{
+					name: '全部评论',
+				}, {
+					name: '只看楼主'
+				}],
+				cBtn: [{
+					name: '表情',
+					icon: 'heart',
+				}],
 				share: [{
 						name: '微信',
 						icon: 'weixin-fill',
@@ -127,7 +221,8 @@
 						name: '编辑',
 						icon: 'warning'
 					}
-				]
+				],
+				keyboardHeight: 0,
 			};
 		},
 		onLoad(params) {
@@ -142,8 +237,12 @@
 		beforeCreate() {
 
 		},
-		created() {
 
+		created() {
+			uni.onKeyboardHeightChange(data => {
+				console.log(data)
+				this.keyboardHeight = data.height + 10
+			})
 		},
 		methods: {
 			shareTap(index) {
@@ -162,6 +261,11 @@
 					}
 				})
 			},
+			cBtnTap(name) {
+				if (name == this.showComemntBtn) this.showComemntBtn = null;
+				else this.showComemntBtn = name
+				console.log(name)
+			},
 			getComments(page, limit) {
 				this.$http.get('/typechoComments/commentsList', {
 					params: {
@@ -169,13 +273,58 @@
 						limit,
 						searchParams: JSON.stringify({
 							type: 'comment',
-							cid: this.cid
+							cid: this.cid,
+							parent: 0,
 						})
 					}
 				}).then(res => {
 					console.log(res)
+					if (res.statusCode == 200) {
+						this.$refs.paging.complete(res.data.data)
+					}
 				})
+			},
+			getSubComment() {
+
+			},
+			reply() {
+				if (this.commentText.length < 3) {
+					uni.$u.toast('再多说点吧~')
+					return;
+				};
+				let params = JSON.stringify(params = {
+					cid: this.cid,
+					ownerId: this.article.authorId,
+					parent: this.pid ? this.pid : 0,
+					text: this.commentText
+				})
+				this.$http.post('/typechoComments/commentsAdd', {
+					params
+				}).then(res => {
+					console.log(res)
+					if (res.data.code) {
+						uni.$u.toast('已发送~')
+						this.commentText = null
+						this.showComment = false
+						this.$refs.paging.reload()
+					}
+				})
+			},
+			manageTap() {
+
+			},
+			changTab(data) {
+				console.log(data)
+				this.commentTabIndex = data.index
+
+			},
+			animationfinish(data) {
+				this.swiperIndex = data.detail.current
+			},
+			con(data) {
+				console.log(data)
 			}
+
 		}
 	}
 </script>

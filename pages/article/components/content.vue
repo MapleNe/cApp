@@ -1,17 +1,17 @@
 <template>
-	<view style="margin-top:10rpx">
+	<view style="margin-top:10rpx;">
 		<view>
 			<text style="font-weight: bold;">{{data.title}}</text>
 		</view>
-		<u-row justify="center" class="u-light-color" customStyle="font-size:20rpx;margin:10rpx 0;">
+		<u-row justify="center" class="u-light-color" customStyle="font-size:26rpx;margin:10rpx 0;">
 			<text>发布于:{{formatTime(data.created)}}</text>
 			<view v-if="data.created!=data.modified||data.modified!=null">
 				<text style="margin:0rpx 10rpx">|</text>
 				<text>最后更新:{{formatTime(data.modified)}}</text>
 			</view>
 		</u-row>
-		<!-- 内容 -->
-		<u-parse :content="data.text"></u-parse>
+		<!-- 内容 overflow:unset防止抖动-->
+		<u-parse :content="data.text" style="overflow: unset;"></u-parse>
 		<!-- 图片 -->
 		<!-- <block v-if="data.images.length==1">
 			<image :src="data.images[0]" mode="aspectFill"

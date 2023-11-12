@@ -1,5 +1,6 @@
+import moment from 'moment';
 import App from './App'
-
+import store from './store'
 // #ifndef VUE3
 import Vue from 'vue'
 import uView from '@/uni_modules/uview-ui'
@@ -13,7 +14,8 @@ import './uni.promisify.adaptor'
 Vue.config.productionTip = false
 App.mpType = 'app'
 const app = new Vue({
-  ...App
+  ...App,
+  store
 })
 // #ifdef H5
 RouterMount(app, router, '#app')
@@ -29,7 +31,8 @@ import { createSSRApp } from 'vue'
 export function createApp() {
   const app = createSSRApp(App)
   return {
-    app
+    app,
+	store
   }
 }
 // #endif
@@ -39,3 +42,8 @@ import {
 	http
 } from '@/utils/luch-request/http.js'
 Vue.prototype.$http = http
+
+Vue.filter('date', function (n) {
+  const result = moment(n * 1000).format('MM/DD') // 转换时间格式
+  return result // 返回出去 否则不会生效
+})
