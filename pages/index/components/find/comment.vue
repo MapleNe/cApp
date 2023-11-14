@@ -2,25 +2,17 @@
 	<view>
 		<z-paging ref="paging" @query="getComments" v-model="comments" :refresher-enabled="false" :fixed="false"
 			height="75vh">
-			<u-row align="top" customStyle="padding:20rpx">
-				<u-avatar :src="data.avatar" size="30"></u-avatar>
+			<u-row align="top" customStyle="padding:30rpx">
+				<u-avatar :src="data.userJson.avatar" size="30"></u-avatar>
 				<view style="display: flex;flex:1; flex-direction: column;margin-left: 20rpx;">
 					<u-row justify="space-between">
-						<text :style="{color:data.isvip?'#FB7299':''}">{{data.author}}</text>
+						<text :style="{color:data.userJson.isvip?'#FB7299':''}">{{data.userJson.name}}</text>
 					</u-row>
 					<view style="margin-top:10rpx;word-break: break-word;">
 						<u-parse :content="data.text"></u-parse>
 					</view>
-					<u-grid :col="3" :border="false" v-if="data.longtext && data.longtext.images">
-						<u-grid-item v-for="(image,imageIndex) in data.longtext.images" :key="imageIndex"
-							v-if="imageIndex<9" @click.native.stop="preview"
-							:customStyle="{width:'210rpx',height:'210rpx',borderRadius:'20rpx',marginTop:'10rpx',marginRight:'10rpx'}">
-							<image :src="image" mode="aspectFill" style="width:210rpx;height:210rpx;border-radius:10rpx"
-								class="u-info-light-bg"></image>
-						</u-grid-item>
-					</u-grid>
+					<u-album :urls="data.pic.images" borderRadius="10" multiple-size="90"></u-album>
 					<u-gap height="6"></u-gap>
-
 					<u-row justify="space-between" customStyle="font-size: 24rpx;color: #aaa;">
 						<text>{{data.created | date}}</text>
 						<u-row customStyle="flex-basis:25%" justify="space-between">
@@ -35,13 +27,12 @@
 			<!-- 子评论开始 -->
 			<block v-for="(item,index) in comments" :key="index">
 				<u-row align="top" customStyle="padding:20rpx">
-					<u-avatar :src="item.avatar" size="30"></u-avatar>
+					<u-avatar :src="item.userJson.avatar" size="30"></u-avatar>
 					<view style="display: flex;flex:1; flex-direction: column;margin-left: 20rpx;">
 						<u-row justify="space-between">
-							<text :style="{color:item.isvip?'#FB7299':''}">{{item.author}}</text>
+							<text :style="{color:item.userJson.isvip?'#FB7299':''}">{{item.userJson.name}}</text>
 						</u-row>
-						<view style="margin-top:10rpx;word-break: break-word;"
-							@tap.stop.prevent="commentCheck(true,item.coid,item.author)">
+						<view style="margin-top:10rpx;word-break: break-word;">
 							<u-parse :content="item.text"></u-parse>
 						</view>
 						<u-grid :col="3" :border="false" v-if="item.longtext && item.longtext.images">
@@ -73,13 +64,12 @@
 			<template #bottom>
 				<u-row customStyle="margin:20rpx;background:#fff" justify="space-between">
 					<u-row customStyle="padding:14rpx 14rpx;border-radius: 50rpx;flex:1" class="u-info-light-bg u-info"
-						@click="commentCheck(false,data.coid,data.author);">
+						@click="commentCheck(false,data.id,data.userJson.name);">
 						<u-icon name="edit-pen" size="20"></u-icon>
 						<text style="margin-left:10rpx;font-size: 28rpx;">回复{{data.author}}</text>
 					</u-row>
 				</u-row>
 				<!-- 回复评论弹窗 -->
-
 			</template>
 			<u-popup :show="showComment" @close="showComment = false" round="20"
 				:customStyle="{transform: `translateY(${-keyboardHeight+'px'})`,transition:'transform 0.3s ease-in-out',padding:30+'rpx'}">
@@ -113,7 +103,7 @@
 
 <script>
 	export default {
-		name: 'subComment',
+		name: 'comment',
 		props: {
 			id: {
 				type: [String, Number],
@@ -141,23 +131,23 @@
 		},
 		created() {
 			uni.onKeyboardHeightChange(data => {
-				console.log(data)
 				this.keyboardHeight = data.height
 			})
 		},
 		methods: {
+			// 动态内容与回复同于一表 @getComments
 			getComments(page, limit) {
-				this.$http.get('/typechoComments/commentsList', {
+				this.$http.get('/typechoSpace/spaceList', {
 					params: {
 						page,
 						limit,
 						searchParams: JSON.stringify({
-							type: 'comment',
-							parent: this.data.coid,
+							type: 3,
+							toid: this.data.id,
 						})
 					}
 				}).then(res => {
-					console.log(res)
+					console.log(res,'回复')
 					if (res.data.code) {
 						this.$refs.paging.complete(res.data.data)
 					}
@@ -170,18 +160,17 @@
 				this.showComment = true
 			},
 			reply() {
-				if (this.commentText.length < 3) {
+				if (this.commentText.length < 4) {
 					uni.$u.toast('再多说点吧~')
 					return;
 				};
-				let params = JSON.stringify(params = {
-					cid: this.data.cid,
-					parent: this.pid,
-					ppid: this.data.coid,
+				let params = {
+					toid: this.data.id,
+					type: 3, // 回复类型为3
 					text: this.commentText,
-				})
-				this.$http.post('/typechoComments/commentsAdd', {
-					params
+				}
+				this.$http.post('/typechoSpace/addSpace', {
+					...params
 				}).then(res => {
 					console.log(res)
 					if (res.data.code) {
@@ -189,6 +178,8 @@
 						this.commentText = null
 						this.showComment = false
 						this.$refs.paging.reload()
+					} else {
+						uni.$u.toast(res.data.msg)
 					}
 				})
 			},

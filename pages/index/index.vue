@@ -1,9 +1,11 @@
 <template>
 	<z-paging-swiper>
-		<index style="margin-bottom: 120rpx" @avatarTap="avatarTap()" v-show="tabbarIndex==0"></index>
-		<user style="margin-bottom: 120rpx" v-show="tabbarIndex==4"></user>
+		<index style="margin-bottom: 120rpx" @avatarTap="avatarTap()" v-show="tabbarIndex == 0"></index>
+		<find v-show="tabbarIndex == 1" :index="tabbarIndex"></find>
+		<user v-show="tabbarIndex == 4" :index="tabbarIndex"></user>
 		<!-- 间隔 -->
 		<template #bottom>
+
 			<u-row justify="space-between" customStyle="padding:0 40rpx;background:white;z-index:999">
 				<block v-for="(item,index) in tabbar" :key="index">
 					<u-row customStyle="flex-direction:column" @click="tabbarTap(index)">
@@ -53,11 +55,13 @@
 
 <script>
 	import index from './components/index.vue';
+	import find from './components/find.vue';
 	import user from './components/user.vue';
 	export default {
 		components: {
 			index,
-			user
+			user,
+			find
 		},
 		data() {
 			return {
@@ -154,8 +158,9 @@
 				this.tabbar.forEach((item, i) => {
 					item.active = i === index;
 					this.tabbarIndex = index
+					
 				});
-				this.tabbarIndex = index
+				// this.tabbarIndex = index
 			},
 			avatarTap() {
 				this.tabbar.forEach((item, i) => {

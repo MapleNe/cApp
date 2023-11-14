@@ -1,8 +1,8 @@
 <template>
 	<view>
 		<z-paging @query="getData" v-model="article" ref="paging" :refresher-enabled="false" :scrollable="scroll"
-			:auto-hide-loading-after-first-loaded="false" :auto-scroll-to-top-when-reload="false"
-			:auto-clean-list-when-reload="false">
+			style="margin-bottom: 60rpx;" :auto-hide-loading-after-first-loaded="false"
+			:auto-scroll-to-top-when-reload="false" :auto-clean-list-when-reload="false">
 			<block v-for="(item,index) in article">
 				<u-row customStyle="flex-direction:column;margin: 20rpx 30rpx;" align="top" @click="goArticle(item)">
 					<text
@@ -14,32 +14,19 @@
 				</u-row>
 				<u-gap height="6" customStyle="background:#f7f7f7"></u-gap>
 			</block>
-		</z-paging>
-	</view>
 
+		</z-paging>
+		<u-gap></u-gap>
+	</view>
 </template>
 
 <script>
 	export default {
-		name: 'articleItem',
+		name: 'publish',
 		props: {
-			uid: {
-				type: [String, Number],
-				default: 0
-			},
-			pageScroll: {
-				type: Boolean,
-				default: true
-			},
 			isScroll: {
 				type: Boolean,
 				default: false,
-			}
-		},
-		data() {
-			return {
-				article: [],
-				scroll: false,
 			}
 		},
 		watch: {
@@ -49,25 +36,44 @@
 				}
 			}
 		},
+		data() {
+			return {
+				article: [],
+				scroll: false,
+			}
+		},
 		created() {
-			console.log('已挂载article')
+			uni.$on('reloadPublish', data => {
+				this.$refs.paging.reload()
+				console.log('接收到消息，刷新publish')
+			})
 		},
 		methods: {
 			getData(page, limit) {
-				this.$http.get('/typechoContents/contentsList', {
-					params: {
-						page,
-						limit,
-						searchParams: JSON.stringify({
-							type: 'post',
-							uid: this.uid
-						})
-					}
+				this.$http.post('/typechoContents/contentsList', {
+					page,
+					limit,
+					searchParams: JSON.stringify({
+						type: 'post',
+						authorId: this.$store.state.userInfo.uid
+					}),
+
 				}).then(res => {
-					if (res.statusCode == 200) {
-						this.$refs.paging.complete(res.data.data)
+					console.log('发布')
+					this.$refs.paging.complete(res.data.data)
+				})
+			},
+			goArticle(data) {
+				uni.setStorageSync(`article_${data.cid}`, data)
+				this.$Router.push({
+					path: '/pages/article/article',
+					query: {
+						id: data.cid
 					}
 				})
+			},
+			reload() {
+				this.$refs.paging.reload();
 			},
 		}
 	}

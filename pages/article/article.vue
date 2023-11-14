@@ -2,7 +2,7 @@
 	<z-paging-swiper>
 		<swiper style="height: 100%;" :current="swiperIndex" @animationfinish="animationfinish">
 			<swiper-item v-show="!loading">
-				<z-paging ref="paging" v-model="comments" @query="getComments" :auto-scroll-to-top-when-reload="false"
+				<z-paging ref="comments" v-model="comments" @query="getComments" :auto-scroll-to-top-when-reload="false"
 					:auto-clean-list-when-reload="false">
 					<template #top>
 						<u-navbar placeholder autoBack @rightClick="showMore = true" fixed>
@@ -11,19 +11,19 @@
 							</view>
 						</u-navbar>
 					</template>
-					<view style="margin: 10rpx 20rpx 20rpx 20rpx;" v-if="article">
+					<view style="margin: 10rpx 30rpx 30rpx 30rpx;" v-if="article">
 						<articleHeader :data="author"></articleHeader>
 						<articleContent :data="article"></articleContent>
 						<articleFooter :data="article"></articleFooter>
 					</view>
 					<!-- 评论区 -->
-					<u-gap height="10" bgColor="#f7f8f7"></u-gap>
+					<u-gap height="8" bgColor="#f4f4f4"></u-gap>
 					<!-- #ifdef APP -->
 					<u-sticky bgColor="#fff">
 						<u-tabs :list="commentTab" :current="commentTabIndex" lineColor="#FB7299"
 							:activeStyle="{color: '#303133',fontWeight: 'bold',transform: 'scale(1.05)'}"
 							:inactiveStyle="{color: '#606266',transform: 'scale(1)'}"
-							:itemStyle="{fontSize:'16rpx',height:'30px'}" lineHeight="3" @change="changTab"></u-tabs>
+							:itemStyle="{fontSize:'16rpx',height:'30px'}" lineHeight="3" @change="changTab" v-if="!loading"></u-tabs>
 					</u-sticky>
 					<!-- #endif -->
 					<!-- #ifndef APP -->
@@ -31,10 +31,10 @@
 						<u-tabs :list="commentTab" :current="commentTabIndex" lineColor="#FB7299"
 							:activeStyle="{color: '#303133',fontWeight: 'bold',transform: 'scale(1.05)'}"
 							:inactiveStyle="{color: '#606266',transform: 'scale(1)'}"
-							:itemStyle="{fontSize:'16rpx',height:'30px'}" lineHeight="3" @change="changTab"></u-tabs>
+							:itemStyle="{fontSize:'16rpx',height:'30px'}" lineHeight="3" @change="changTab" v-if="!loading"></u-tabs>
 					</u-sticky>
 					<!-- #endif -->
-					<view style="margin: 20rpx;">
+					<view style="margin: 30rpx;">
 						<!-- 开始 -->
 						<block v-for="(item,index) in comments" v-if="comments">
 							<view style="margin:10rpx 0">
@@ -87,11 +87,11 @@
 				</z-paging>
 			</swiper-item>
 		</swiper>
-		<!-- <u-loading-page :loading="loading"></u-loading-page> -->
+		<u-loading-page :loading="loading"></u-loading-page>
 		<!-- 页面公用组件 -->
 		<!-- 回复文章 -->
 		<u-popup :show="showComment" @close="showComment = false;pid = 0" round="20"
-			:customStyle="{paddingBottom:keyboardHeight+'px',padding:30+'rpx'}">
+			:customStyle="{transform: `translateY(${-keyboardHeight+'px'})`,transition:'transform 0.3s ease-in-out',padding:30+'rpx'}">
 			<u--textarea :adjustPosition="false" :cursorSpacing="40" type="textarea" v-model="commentText"
 				placeholder="灵感迸发" border="none"
 				customStyle="background:#f7f8f7;padding:4rpx 10rpx;border-radius:20rpx"></u--textarea>
@@ -137,12 +137,9 @@
 			</u-row>
 		</u-popup>
 		<!-- 子评论 -->
-		<u-popup :show="showSub" @close="showSub = false"  round="20" closeable>
+		<u-popup :show="showSub" @close="showSub = false"  round="20">
 			<u-gap height="25"></u-gap>
-			<view style="height: 75vh;">
-				<subComment :data="subComment"></subComment>
-			</view>
-			
+			<subComment :data="subComment" ref="paging"></subComment>
 		</u-popup>
 	</z-paging-swiper>
 </template>
@@ -153,6 +150,7 @@
 	import articleFooter from '@/pages/article/components/footer.vue';
 	import comment from '@/pages/article/components/comments/comment.vue';
 	import subComment from '@/pages/article/components/comments/subComment.vue';
+	import ZPMixin from '@/uni_modules/z-paging/components/z-paging/js/z-paging-mixin'
 	export default {
 		components: {
 			articleHeader,
@@ -161,6 +159,7 @@
 			comment,
 			subComment,
 		},
+		mixins: [ZPMixin],
 		data() {
 			return {
 				cid: 0,
@@ -241,7 +240,7 @@
 		created() {
 			uni.onKeyboardHeightChange(data => {
 				console.log(data)
-				this.keyboardHeight = data.height + 10
+				this.keyboardHeight = data.height
 			})
 		},
 		methods: {
@@ -280,7 +279,7 @@
 				}).then(res => {
 					console.log(res)
 					if (res.statusCode == 200) {
-						this.$refs.paging.complete(res.data.data)
+						this.$refs.comments.complete(res.data.data)
 					}
 				})
 			},
@@ -301,12 +300,13 @@
 				this.$http.post('/typechoComments/commentsAdd', {
 					params
 				}).then(res => {
-					console.log(res)
 					if (res.data.code) {
 						uni.$u.toast('已发送~')
 						this.commentText = null
 						this.showComment = false
 						this.$refs.paging.reload()
+					}else{
+						uni.$u.toast(res.data.msg)
 					}
 				})
 			},

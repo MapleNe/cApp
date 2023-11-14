@@ -1,141 +1,274 @@
 <template>
-	<z-paging ref="paging" refresher-only @onRefresh="initData">
-		<view style="position: relative;top:0">
-			<image :src="$store.state.hasLogin?userInfo.userBg:'/static/login.png'" mode="aspectFill"
-				style="width: 100%;height: 380rpx;background: #000;"></image>
-			<u-row customStyle="position: absolute;top: 60rpx;right:0;margin:20rpx;">
-				<u-icon name="scan" size="25" color="#cacdff"></u-icon>
-			</u-row>
-		</view>
-		<view style="position: relative;top: -50rpx;background: #fff;border-radius: 40rpx 40rpx 0 0;">
-			<u-avatar :src="userInfo.avatar" size="80" @click="$store.state.hasLogin?goProfile():goLogin()"
-				customStyle="position:absolute;top:-80rpx;margin-left:60rpx;border:6rpx solid #fff"></u-avatar>
-			<u-row justify="end" customStyle="padding:20rpx">
-				<view v-show="$store.state.hasLogin">
-					<u-button color="#FB7299C4" plain size="normal" @click="editProfile()"
-						customStyle="height:50rpx;border-radius:20rpx">个人资料</u-button>
-				</view>
-			</u-row>
-			<!-- 未登录占位 -->
-			<view v-if="!$store.state.hasLogin" style="margin:30rpx;display: flex;flex-direction: column;">
-				<u-gap height="20"></u-gap>
-				<text :style="{fontSize:50+'rpx'}">点击登录</text>
-				<text>登录解锁更多精彩内容</text>
-			</view>
-			<!-- 结束 -->
-			<view style="margin:30rpx" v-show="$store.state.hasLogin">
-				<u-row justify="space-between">
-					<u-row>
-						<text
-							:style="{color:userInfo.isvip?'#FB7299':'',fontSize:50+'rpx'}">{{userInfo.screenName}}</text>
-						<text
-							style="font-size: 20rpx;color:white;margin-left:10rpx;background:#FB7299;padding:0 10rpx;border-radius:8rpx;box-shadow:0 0 9rpx 0 #FB7299">
-							{{'Lv.'+ userInfo.lv}}
-						</text>
-					</u-row>
-					<u-row customStyle="background:#f7f7f7;padding:6rpx 8rpx;border-radius:10rpx">
-						<u-icon name="rmb" color="black" bold size="14"
-							customStyle="background:#e8e8e8;padding:2rpx;border-radius:5rpx;margin-right:4rpx"></u-icon>
-						<u-count-to :startVal="userMeta.assets?userMeta.assets/100:0" font-size="13"
-							:endVal="userMeta.assets"></u-count-to>
-					</u-row>
-				</u-row>
-				<u-row class="u-info">
-					<u-icon name="file-text" size="20" class="u-info"></u-icon>
-					<text class="u-line-1">{{userInfo.introduce?userInfo.introduce:'暂时还没有简介哦~'}}</text>
-				</u-row>
-				<u-icon name="checkmark" label="管理员" size="14" color="white"
-					customStyle="background:red;border-radius:100rpx;box-shadow:0 0 10rpx 0 red"
-					v-if="userInfo.groupKey=='administrator'"></u-icon>
-
-				<view style="margin-top: 20rpx;">
-					<u-row>
-						<u-col span="2">
-							<view
-								style="display: flex;flex-direction: column;justify-content: center;align-items: center;">
-								<text>{{userMeta.fanNum}}</text>
-								<text>粉丝</text>
-							</view>
-						</u-col>
-						<u-col span="2">
-							<view
-								style="display: flex;flex-direction: column;justify-content: center;align-items: center;">
-								<text>{{userMeta.commentsNum}}</text>
-								<text>评论</text>
-							</view>
-						</u-col>
-						<u-col span="2">
-							<view
-								style="display: flex;flex-direction: column;justify-content: center;align-items: center;">
-								<text>{{userMeta.contentsNum}}</text>
-								<text>帖子</text>
-							</view>
-						</u-col>
-
-					</u-row>
-				</view>
-			</view>
-			<view>
-				<u-gap height="6" customStyle="background:#f4f4f4"></u-gap>
-				<view style="margin: 20rpx 30rpx;">
-					<block v-for="(item,index) in userPanel" :key="index">
-						<u-row customStyle="margin-top:10rpx">
-							<u-icon :name="item.icon" size="20" customStyle="margin-right:10rpx"></u-icon>
-							<text>{{item.name}}</text>
+	<view>
+		<z-paging ref="paging" refresher-only @onRefresh="onRefresh" @query="initData" @scroll="scroll"
+			:auto-scroll-to-top-when-reload="false" :auto-clean-list-when-reload="false">
+			<template #top>
+				<u-navbar :bgColor="`rgba(255,255,255,${opacity})`">
+					<view slot="left">
+						<u-row>
+							<u-icon name="scan" size="26" :color="opacity>0.4? 'black':'white'"></u-icon>
+							<u-row customStyle="margin-left:20rpx" v-show="opacity>=1"
+								@click="$refs.paging.scrollToTop()">
+								<u-avatar :src="userInfo.avatar" size="26"></u-avatar>
+								<text style="margin-left:20rpx">{{userInfo.screenName}}</text>
+							</u-row>
 						</u-row>
+					</view>
+					<u-icon name="list" slot="right" size="26" :color="opacity>0.4? 'black':'white'"
+						@click="showRightMenu = true"></u-icon>
+				</u-navbar>
+			</template>
+			<view style="position: relative;top: 0;" id="top">
+				<image :src="userInfo.userBg?userInfo.userBg:'/static/login.png'" mode="aspectFill"
+					style="width: 100%; height: 800rpx;"></image>
+				<view class="overlay"></view>
+				<view style="position: absolute;top: 160rpx;margin: 30rpx;">
+					<u-avatar :src="userInfo.avatar" size="70" customStyle="border:6rpx solid #fff"
+						@click="$store.state.hasLogin?goProfile():goLogin()"></u-avatar>
+					<!-- 已登录 -->
+					<view style="margin-top: 20rpx;display: flex;flex-direction: column;" v-if="$store.state.hasLogin">
+						<text style="color: white;font-weight: bold;">{{userInfo.screenName}}</text>
+						<view style="font-size: 26rpx;display: flex;flex-direction: column;color: white;">
+							<text>通行证ID: {{userInfo.uid}}</text>
+							<text class="u-line-2">{{userInfo.introduce}}</text>
+						</view>
+						<view style="margin-top: 20rpx;">
+							<u-row>
+								<u-row
+									customStyle="background:#00aaff4c;padding:8rpx 12rpx;color:white;border-radius:10rpx">
+									<u-icon name="man" size="14" color="white"></u-icon>
+									<text style="font-size: 24rpx;">男</text>
+								</u-row>
+								<u-row
+									customStyle="margin-left:20rpx;background:#ffffff4c;padding:8rpx 12rpx;color:white;border-radius:10rpx">
+									<u-icon name="map" size="12" color="white"></u-icon>
+									<text style="font-size: 24rpx;">广东</text>
+								</u-row>
+							</u-row>
+						</view>
+						<view style="margin-top: 20rpx;">
+							<u-row justify="space-between">
+								<view style="color:#999">
+									<text style="color: white;">{{userMeta.fanNum}}</text>
+									<text style="font-size: 24rpx;margin-left: 5rpx;">粉丝</text>
+								</view>
+								<view style="color:#999;margin: 0 20rpx;">
+									<text style="color: white;">{{userMeta.followNum}}</text>
+									<text style="font-size: 24rpx;margin-left: 5rpx;">关注</text>
+								</view>
+								<view style="color:#999">
+									<text style="color: white;">{{userMeta.contentsNum}}</text>
+									<text style="font-size: 24rpx;margin-left: 5rpx;">帖子</text>
+								</view>
 
+							</u-row>
+						</view>
+					</view>
+					<!-- 未登录占位 -->
+					<view style="margin-top: 20rpx;display: flex;flex-direction: column;" v-else>
+						<text style="color: white;font-weight: bold;" @click="goLogin">点击登录</text>
+					</view>
+				</view>
+			</view>
+			<view style="position: relative;top: -50rpx;background: #fff;border-radius: 40rpx 40rpx 0 0;">
+				<view style="padding: 30rpx 30rpx 0 30rpx;" id="scrolllist">
+					<u-scroll-list indicatorActiveColor="#fb7299" :indicator="false">
+						<block v-for="(item,index) in scrollList" :key="index">
+							<u-row justify="start" align="top"
+								customStyle="flex-direction:column;margin-right:20rpx;background: #f4f4f4;border-radius: 20rpx;padding:20rpx">
+								<u-row>
+									<u-icon :name="item.icon"></u-icon>
+									<text
+										style="font-size: 28rpx;font-weight: bold;margin-left: 10rpx;">{{item.name}}</text>
+								</u-row>
+								<text style="font-size: 22rpx;color: #999;">{{item.description}}</text>
+							</u-row>
+						</block>
+					</u-scroll-list>
+				</view>
+				<view v-if="$store.state.hasLogin">
+					<!-- #ifndef APP -->
+					<u-sticky bgColor="#fff">
+						<u-tabs :list="list" lineColor="#FB7299" activeStyle="color:#303133;font-weight:bold"
+							:current="tabsIndex" inactiveStyle="color:#999" @change="tabsIndex = $event.index"
+							v-if="isMounted"></></u-tabs>
+					</u-sticky>
+					<!-- #endif -->
+					<!-- #ifdef APP -->
+					<u-sticky bgColor="#fff" offsetTop="60">
+						<u-tabs :list="list" lineColor="#FB7299" activeStyle="color:#303133;font-weight:bold"
+							:current="tabsIndex" inactiveStyle="color:#999" @change="tabsIndex = $event.index"
+							v-if="isMounted"></u-tabs>
+					</u-sticky>
+					<!-- #endif -->
+					<swiper style="height: 100vh;" :current="tabsIndex"
+						@animationfinish="tabsIndex = $event.detail.current">
+						<swiper-item style="overflow: auto;">
+							<publish :isScroll="isScroll" :data="userInfo" ref="publish"></publish>
+						</swiper-item>
+						<swiper-item style="overflow: auto;">
+							<comment :isScroll="isScroll" :data="userInfo" ref="comment"></comment>
+						</swiper-item>
+					</swiper>
+				</view>
+				<view v-else style="margin-top: 100rpx;text-align: center;">
+					<text style="font-weight: bold;" @click="goLogin">登录查看更多精彩</text>
+				</view>
+			</view>
+		</z-paging>
+		<!-- 组件 -->
+		<u-popup mode="right" :show="showRightMenu" @close="showRightMenu = false" bgColor="#f4f4f4"
+			customStyle="width:70vw">
+			<u-gap height="44"></u-gap>
+			<block v-for="(panel,index) in rightMenuItem" :key="index">
+				<view style="margin:20rpx 20rpx 0 20rpx; background: #fff;border-radius: 20rpx;">
+					<block v-for="(item,subindex) in panel">
+						<u-row customStyle="padding:30rpx">
+							<u-icon :name="item.icon" size="24"></u-icon>
+							<text style="margin-left:20rpx;font-weight: 600;">{{item.name}}</text>
+						</u-row>
 					</block>
 				</view>
-				<u-gap height="6" customStyle="background:#f4f4f4"></u-gap>
-				<!-- 固定区域 -->
-				<u-list height="auto">
-					<u-list-item v-for="(item,index) in static" :key="index">
-						<u-cell :title="item.name">
-							<u-icon :name="item.icon" slot="icon" size="20"></u-icon>
-							<u-icon name="arrow-right" slot="right-icon"></u-icon>
-						</u-cell>
-					</u-list-item>
-				</u-list>
+			</block>
+			<view style="position: fixed;bottom: 0;margin: 20rpx;background: #fff;border-radius: 20rpx; width: 65vw;">
+				<u-row justify="space-between" @click="goLogout">
+					<block v-for="(item,index) in static">
+						<u-row customStyle="padding:30rpx;flex-direction:column;align-items:center;">
+							<u-icon :name="item.icon" size="22" bold
+								customStyle="background:#eee;padding:15rpx;border-radius:500rpx"></u-icon>
+							<text style="font-size: 30rpx;color: #999;">{{item.name}}</text>
+						</u-row>
+					</block>
+				</u-row>
 			</view>
-		</view>
-	</z-paging>
+		</u-popup>
+	</view>
 </template>
 
 <script>
 	import {
 		mapState
 	} from 'vuex';
+	import publish from '../components/user/publish.vue';
+	import comment from '../components/user/comment.vue'
 	export default {
+		components: {
+			publish,
+			comment
+		},
+		props: {
+			index: {
+				type: [String, Number],
+				default: 0,
+			}
+		},
+		watch: {
+			index: {
+				handler(e) {
+					if (e == 4) this.isMounted = true
+				}
+			}
+		},
 		data() {
 			return {
+				showRightMenu: false,
+				isMounted: false,
+				rightMenuItem: {
+					personl: [{
+							name: '个人信息',
+							icon: 'heart'
+						},
+						{
+							name: '我的收藏',
+							icon: 'heart'
+						},
+						{
+							name: '浏览历史',
+							icon: 'heart'
+						}
+					],
+					all: [{
+							name: '我的帖子',
+							icon: 'heart'
+						},
+						{
+							name: '我的订单',
+							icon: 'heart'
+						},
+						{
+							name: '我的小摊',
+							icon: 'heart'
+						}
+					],
+					blance: [{
+							name: '我的钱包',
+							icon: 'heart'
+						},
+						{
+							name: '兑换中心',
+							icon: 'heart'
+						},
+						{
+							name: '商城',
+							icon: 'heart'
+						}
+					]
+				},
 				static: [{
+						name: '设置',
+						path: '',
+						icon: 'setting'
+					}, {
 						name: '反馈',
 						path: '',
-						icon: 'file-text-fill'
+						icon: 'file-text'
 					},
 					{
 						name: '客服',
 						path: '',
-						icon: 'heart-fill'
+						icon: 'kefu-ermai'
+					},
+
+				],
+				scrollList: [{
+						name: '创作中心',
+						icon: 'heart',
+						description: '作品收益管理'
+					},
+					{
+						name: '我的小摊',
+						icon: 'heart',
+						description: '我所创作的作品'
+					},
+					{
+						name: '商城',
+						icon: 'heart',
+						description: '虚拟商品列表'
+					},
+					{
+						name: '兑换中心',
+						icon: 'heart',
+						description: '周边积分兑换'
+					},
+					{
+						name: '我的钱包',
+						icon: 'heart',
+						description: '我的钱包'
+					},
+				],
+				tabsIndex: 0,
+				list: [{
+						name: '发布'
 					}, {
-						name: '设置',
-						path: '',
-						icon: 'setting-fill'
-					}
-				],
-				userPanel: [{
-						name: '我的收藏',
-						icon: 'file-text-fill'
+						name: '评论'
 					},
 					{
-						name: '我的订单',
-						icon: 'file-text-fill'
-					},
-					{
-						name: '收藏',
-						icon: 'file-text-fill'
+						name: '收藏'
 					}
 				],
+				opacity: 0,
+				allHeight: 0,
+				isScroll: false,
 			}
 		},
 		computed: {
@@ -144,6 +277,7 @@
 		created() {
 			this.initData()
 		},
+		onReady() {},
 		methods: {
 			initData() {
 				if (uni.getStorageSync('token')) {
@@ -154,6 +288,21 @@
 					//1秒之后停止刷新动画
 					this.$refs.paging.complete();
 				}, 1000)
+			},
+			onRefresh() {
+				switch (this.tabsIndex) {
+					case 0:
+						this.$refs.publish.reload()
+						break;
+					case 1:
+						this.$refs.comment.reload()
+						break;
+					case 2:
+						this.$refs.collect.reload()
+						break;
+					default:
+						break;
+				}
 			},
 			getUserInfo() {
 				if (!uni.getStorageSync('token')) return;
@@ -171,7 +320,7 @@
 				})
 			},
 			getUserMeta() {
-				this.$http.get('/typechoUsers/userData').then(res => {
+				this.$http.post('/typechoUsers/userData').then(res => {
 					if (res.data.code) {
 						console.log(res)
 						this.$store.commit('setUserMeta', res.data.data)
@@ -207,10 +356,25 @@
 				this.$Router.push({
 					path: '/pages/user/login',
 				})
-			}
+			},
+			scroll(data) {
+				const scrollTop = data.detail.scrollTop;
+				this.opacity = scrollTop / 100;
+				if (scrollTop > 407) this.isScroll = true;
+				else this.isScroll = false;
+			},
 		}
 	}
 </script>
 
-<style>
+<style lang="scss">
+	.overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background-color: rgba(0, 0, 0, 0.1);
+		pointer-events: none;
+	}
 </style>
