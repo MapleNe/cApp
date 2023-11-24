@@ -1,18 +1,17 @@
 <template>
 	<z-paging ref="paging" v-model="content" @query="getData" :auto="false" safe-area-inset-bottom
 		use-safe-area-placeholder>
-		<view style="margin: 20rpx;">
+		<view style="margin: 20rpx;" v-if="isSwiper">
 			<u-swiper height="160" :list="swiperList" keyName="image" :autoplay="false" circular
 				@click="swiperTap"></u-swiper>
 		</view>
 		<block v-for="(item,index) in content" :key="index">
-			<view @click.stop="goArticle(item)"
-				style="margin:30rpx 30rpx 0rpx 30rpx;padding-bottom: 10rpx;">
+			<view @tap.stop="goArticle(item)" style="margin:30rpx 30rpx 0rpx 30rpx;padding-bottom: 10rpx;">
 				<article-header :data="item"></article-header>
 				<article-content :data="item"></article-content>
 				<article-footer :data="item"></article-footer>
 			</view>
-			<u-gap height="6" customStyle="background:#f7f7f7"></u-gap>
+			<view style="border-bottom:1rpx #f7f7f7 solid"></view>
 		</block>
 	</z-paging>
 </template>
@@ -41,6 +40,10 @@
 			},
 			waterFall: {
 				type: [Boolean, String],
+				default: false,
+			},
+			isSwiper: {
+				type: Boolean,
 				default: false,
 			}
 		},
@@ -77,9 +80,12 @@
 						limit,
 						searchParams: JSON.stringify({
 							type: 'post'
-						})
+						}),
+						order: 'istop desc,created desc',
+						uid: this.$store.state.hasLogin ? this.$store.state.userInfo.uid : ''
 					}
 				}).then(res => {
+					console.log(res)
 					if (res.statusCode == 200) {
 						this.$refs.paging.complete(res.data.data);
 						this.is_loaded = true

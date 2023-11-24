@@ -21,13 +21,15 @@
 					customStyle="padding:15rpx 0 0 0" border="bottom" v-model="username">
 				</u--input>
 				<u-gap></u-gap>
-				<u--input placeholder="邮箱" prefixIcon="email" prefixIconStyle="font-size:40rpx"
-					customStyle="padding:15rpx 0 0 0" border="bottom" v-model="email">
-					<template slot="suffix">
-						<u-code ref="uCode" @change="codeChange" seconds="120" changeText="X秒重新获取"></u-code>
-						<u-button @tap="getCode" :text="tips" plain color="#FB7299" size="mini"></u-button>
-					</template>
-				</u--input>
+				<u-row customStyle="border-bottom:1rpx solid #dadbde">
+					<u--input placeholder="邮箱" prefixIcon="email" prefixIconStyle="font-size:40rpx"
+						customStyle="padding:15rpx 0 0 0" border="none" v-model="email">
+					</u--input>
+					<view>
+						<u-code ref="uCode" @change="codeChange" seconds="120"></u-code>
+						<u-button @tap="getCode" plain color="#a899e6" size="mini">{{tips}}</u-button>
+					</view>
+				</u-row>
 				<u-gap></u-gap>
 				<u--input placeholder="密码" type="password" prefixIcon="lock" prefixIconStyle="font-size:40rpx"
 					customStyle="padding:15rpx 0 0 0" border="bottom" v-model="password">
@@ -45,21 +47,21 @@
 			<view style="margin-top:20rpx">
 				<u-row>
 					<u-checkbox-group>
-						<u-checkbox @change="accept=!accept" v-model="accept" activeColor="#FB7299" size="15"
+						<u-checkbox @change="accept=!accept" v-model="accept" activeColor="#a899e6" size="15"
 							shape="circle"></u-checkbox>
 					</u-checkbox-group>
 					<u-row customStyle="font-size:30rpx">
 						<text>登录及代表你同意</text>
-						<text style="color:#FB7299">《用户协议》</text>
+						<text style="color:#a899e6">《用户协议》</text>
 						<text>与</text>
-						<text style="color:#FB7299">《隐私政策》</text>
+						<text style="color:#a899e6">《隐私政策》</text>
 					</u-row>
 				</u-row>
 			</view>
 
 			<view style="margin-top: 40rpx;">
-				<u-button :text="isLogin?'登录':'注册'" :hairline="false" color="#FB7299" size="mini" loading-size="10"
-					customStyle=";padding:30rpx 80rpx;width:200rpx;border-radius:10rpx;box-shadow:0 0 9rpx 0 #FB7299"
+				<u-button :text="isLogin?'登录':'注册'" :hairline="false" color="#a899e6" size="normal" loading-size="10"
+					customStyle="width:300rpx; height:80rpx;border-radius:10rpx;box-shadow:0 0 9rpx 0 #a899e6"
 					@click="isLogin?login():register()"></u-button>
 			</view>
 			<u-gap height="60"></u-gap>
@@ -85,13 +87,17 @@
 				customStyle="padding:15rpx 0 0 0" border="bottom" v-model="password">
 			</u--input>
 			<u-gap></u-gap>
-			<u--input placeholder="验证码" type="number" prefixIcon="fingerprint" prefixIconStyle="font-size:40rpx"
-				customStyle="padding:15rpx 0 0 0" border="bottom" v-model="code">
-				<template slot="suffix">
-					<u-code ref="uCode1" @change="codeChange" seconds="120" changeText="X秒重新获取"></u-code>
-					<u-button @click="getAllCode" :text="tips" plain color="#FB7299" size="mini"></u-button>
-				</template>
-			</u--input>
+			<u-row customStyle="border-bottom:1rpx solid #dadbde">
+				<u--input placeholder="验证码" type="number" prefixIcon="fingerprint" prefixIconStyle="font-size:40rpx"
+					customStyle="padding:15rpx 0 0 0" border="none" v-model="code">
+				</u--input>
+				<view>
+					<u-code ref="uCode1" @change="codeChange" seconds="120"></u-code>
+					<u-button @tap="getAllCode" plain color="#a899e6" size="mini">{{tips}}</u-button>
+				</view>
+
+			</u-row>
+
 			<u-row justify="space-between"
 				customStyle="margin-top:20rpx;font-weight:bold;font-size:30rpx;color:#414141">
 				<text @click="isForget=false">返回登录</text>
@@ -99,20 +105,20 @@
 			<view style="margin-top:20rpx">
 				<u-row>
 					<u-checkbox-group>
-						<u-checkbox @change="accept=!accept" v-model="accept" activeColor="#FB7299" size="15"
+						<u-checkbox @change="accept=!accept" v-model="accept" activeColor="#a899e6" size="15"
 							shape="circle"></u-checkbox>
 					</u-checkbox-group>
 					<u-row customStyle="font-size:30rpx">
 						<text>登录及代表你同意</text>
-						<text style="color:#FB7299">《用户协议》</text>
+						<text style="color:#a899e6">《用户协议》</text>
 						<text>与</text>
-						<text style="color:#FB7299">《隐私政策》</text>
+						<text style="color:#a899e6">《隐私政策》</text>
 					</u-row>
 				</u-row>
 			</view>
 			<view style="margin-top: 40rpx;">
-				<u-button text="确认" :hairline="false" color="#FB7299" size="mini" loading-size="10"
-					customStyle=";padding:30rpx 80rpx;font-size:28rpx;width:200rpx;border-radius:10rpx;box-shadow:0 0 9rpx 0 #FB7299"
+				<u-button text="确认" :hairline="false" color="#a899e6" size="mini" loading-size="10"
+					customStyle="width:300rpx; height:80rpx;border-radius:10rpx;box-shadow:0 0 9rpx 0 #a899e6"
 					@click="resetPassword()"></u-button>
 			</view>
 		</view>
@@ -133,9 +139,8 @@
 				code: null,
 				isLogin: true,
 				isForget: false,
-				tips: null,
+				tips: '12312',
 				accept: false,
-				seconds: 120,
 				loginBtn: [{
 						provider: 'weixin',
 						name: '微信',
@@ -159,12 +164,13 @@
 		methods: {
 			...mapMutations(['setToken', 'setUser', 'setUserMeta']),
 			codeChange(text) {
+
 				this.tips = text
 			},
 			getCode() {
 				if (this.account == null) {
 					uni.$u.toast('邮箱为空');
-					return
+					return;
 				}
 				if (this.$refs.uCode.canGetCode) {
 					this.$http.post('/typechoUsers/RegSendCode', {
@@ -172,7 +178,6 @@
 							mail: this.account
 						})
 					}).then(res => {
-						console.log(res)
 						this.$refs.uCode.start();
 					})
 				}
@@ -186,9 +191,11 @@
 					this.$http.post('/typechoUsers/SendCode', {
 						params: JSON.stringify({
 							name: this.account
-						})
+						}),
+						custom: {
+							pass: true
+						}
 					}).then(res => {
-						console.log(res)
 						this.$refs.uCode1.start();
 					})
 				}
@@ -203,7 +210,10 @@
 						name: this.account,
 						password: this.password,
 						code: this.code
-					})
+					}),
+					custom: {
+						pass: true
+					}
 				}).then(res => {
 					if (res.data.code) {
 						uni.$u.toast('已重置密码，即将自动登录')
@@ -230,19 +240,33 @@
 					params: JSON.stringify({
 						name: this.account,
 						password: this.password
-					})
+					}),
+					custom: {
+						pass: true
+					}
 				}).then(res => {
 					console.log(res)
 					if (res.data.code) {
 						this.setToken(res.data.data.token);
 						this.getUserInfo(res.data.data.uid);
+						this.getUserMeta()
 						uni.$u.toast('已连接主程序')
+						uni.$emit('login', true)
+						//保存账号密码 用于持久登录
+						let account = {
+							name: this.account,
+							password: this.password
+						}
+						uni.setStorageSync('account', account)
+						//
 						setTimeout(() => {
 							this.$Router.back(1)
 						}, 2000)
 					} else {
 						uni.$u.toast(res.data.msg)
 					}
+				}).catch(err => {
+					console.log(err)
 				})
 			},
 			getUserInfo(uid) {
@@ -251,13 +275,14 @@
 						key: uid
 					}
 				}).then(res => {
+					console.log(res)
 					if (res.data.code) {
 						this.setUser(res.data.data);
 					}
 				})
 			},
 			getUserMeta() {
-				this.$http.get('/typechoUsers/userData').then(res => {
+				this.$http.post('/typechoUsers/userData').then(res => {
 					if (res.data.code) {
 						this.setUserMeta(res.data.data)
 					}
@@ -282,7 +307,10 @@
 						password: this.password,
 						mail: this.email,
 						code: this.code,
-					})
+					}),
+					custom: {
+						pass: true
+					}
 				}).then(res => {
 					if (res.data.code) {
 						uni.$u.toast(res.data.msg + '即将自动登录')
@@ -298,7 +326,10 @@
 					this.$http.post('/typechoUsers/RegSendCode', {
 						params: JSON.stringify({
 							mail: this.email
-						})
+						}),
+						custom: {
+							pass: true
+						}
 					}).then(res => {
 						if (res.statusCode == 200) {
 							uni.$u.toast(res.data.msg)
@@ -315,8 +346,17 @@
 						name: this.account,
 						password: this.password,
 						code: this.code,
-					})
+					}),
+					custom: {
+						pass: true
+					}
 				})
+			},
+			start() {
+
+			},
+			end() {
+
 			}
 
 		}

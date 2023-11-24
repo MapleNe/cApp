@@ -1,37 +1,10 @@
 <template>
-	<view style="margin-top:10rpx;">
-		<view>
-			<text style="font-weight: bold;">{{data.title}}</text>
-		</view>
-		<u-row justify="center" class="u-light-color" customStyle="font-size:26rpx;margin:10rpx 0;">
-			<text>发布于:{{formatTime(data.created)}}</text>
-			<view v-if="data.created!=data.modified||data.modified!=null">
-				<text style="margin:0rpx 10rpx">|</text>
-				<text>最后更新:{{formatTime(data.modified)}}</text>
-			</view>
-		</u-row>
+	<view style="margin-top:20rpx;">
 		<!-- 内容 overflow:unset防止抖动-->
-		<u-parse :content="data.text" style="overflow: unset;"></u-parse>
-		<!-- 图片 -->
-		<!-- <block v-if="data.images.length==1">
-			<image :src="data.images[0]" mode="aspectFill"
-				style="margin-top:10rpx;height: 340rpx;border-radius: 20rpx;"></image>
-		</block>
-		<u-grid :col="data.images.length" :border="false" v-if="data.images.length==2||data.images.length==4"
-			customStyle="margin-top:10rpx">
-			<u-grid-item v-for="(image,imageIndex) in data.images" :key="imageIndex"
-				customStyle="margin-right: 10rpx;width:240rpx;height:240rpx;border-radius:20rpx">
-				<image :src="image" mode="aspectFill" style="height: 240rpx;width: 240rpx;border-radius:10rpx"
-					class="u-info-light-bg"></image>
-			</u-grid-item>
-		</u-grid>
-		<u-grid align="center" :col="3" :border="false" v-if="data.images.length>=3&&data.images.length<=9">
-			<u-grid-item v-for="(image,imageIndex) in data.images" :key="imageIndex"
-				:customStyle="{width:'220rpx',height:'220rpx',borderRadius:'20rpx',marginTop:'10rpx',marginRight:is_last(imageIndex)}">
-				<image :src="image" mode="aspectFill" style="width:220rpx;height:220rpx;border-radius:10rpx"
-					class="u-info-light-bg"></image>
-			</u-grid-item>
-		</u-grid> -->
+		<!-- <u-parse>组件错误更换为uv-parse -->
+		<uv-parse :tag-style="{img:'border-radius:20rpx',video:'border-radius:20rpx !improtant',uniVideo:'border-radius:20rpx !improtant'}"
+			style="overflow: unset;white-space: normal;word-break: break-all" :show-img-menu="!isScroll"
+			:content="data.text" lazyLoad selectable></uv-parse>
 	</view>
 </template>
 
@@ -45,15 +18,29 @@
 			data: {
 				type: Object,
 				default: null,
+			},
+			autoPreview: {
+				type: Boolean,
+				default: false,
 			}
+		},
+		watch: {
+			autoPreview: {
+				handler(status) {
+					this.isScroll = status
+					console.log(this.isScroll)
+				},
+				deep: true,
+				immediate: true
+			},
 		},
 		computed: {
 
 		},
-		
+
 		data() {
 			return {
-
+				isScroll: false,
 			}
 		},
 		created() {
@@ -61,8 +48,8 @@
 		},
 		methods: {
 			formatTime,
-			is_last(index){
-				if(index!=2||index!=5||index!=8) return '10rpx'
+			is_last(index) {
+				if (index != 2 || index != 5 || index != 8) return '10rpx'
 			}
 		}
 	}

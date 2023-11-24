@@ -1,12 +1,14 @@
 <template>
 	<view>
+		<u-gap height="30"></u-gap>
 		<z-paging ref="paging" @query="getComments" v-model="comments" :refresher-enabled="false" :fixed="false"
-			height="75vh">
-			<u-row align="top" customStyle="padding:30rpx">
+			height="70vh" :auto-scroll-to-top-when-reload="false" :auto-clean-list-when-reload="false">
+			<u-row align="top" customStyle="padding:30rpx;padding-top:0">
 				<u-avatar :src="data.userJson.avatar" size="30"></u-avatar>
 				<view style="display: flex;flex:1; flex-direction: column;margin-left: 20rpx;">
 					<u-row justify="space-between">
-						<text :style="{color:data.userJson.isvip?'#FB7299':''}">{{data.userJson.name}}</text>
+						<text
+							:style="{color:data.userJson.isvip?'#a899e6':'',fontWeight:600}">{{data.userJson.name}}</text>
 					</u-row>
 					<view style="margin-top:10rpx;word-break: break-word;">
 						<u-parse :content="data.text"></u-parse>
@@ -24,13 +26,20 @@
 				</view>
 			</u-row>
 			<u-gap height="8" bgColor="#f4f4f4"></u-gap>
-			<!-- 子评论开始 -->
+			<!-- 评论开始 -->
 			<block v-for="(item,index) in comments" :key="index">
 				<u-row align="top" customStyle="padding:20rpx">
-					<u-avatar :src="item.userJson.avatar" size="30"></u-avatar>
+					<view style="position: relative;">
+						<u-avatar :src="item.userJson.avatar" size="30"></u-avatar>
+						<image class="avatar_head" mode="aspectFill"
+							:src="item.userJson.opt&&item.userJson.opt.head_picture">
+						</image>
+					</view>
+
 					<view style="display: flex;flex:1; flex-direction: column;margin-left: 20rpx;">
 						<u-row justify="space-between">
-							<text :style="{color:item.userJson.isvip?'#FB7299':''}">{{item.userJson.name}}</text>
+							<text
+								:style="{color:item.userJson.isvip?'#a899e6':'',fontWeight:600}">{{item.userJson.name}}</text>
 						</u-row>
 						<view style="margin-top:10rpx;word-break: break-word;">
 							<u-parse :content="item.text"></u-parse>
@@ -47,7 +56,7 @@
 						<u-gap height="6"></u-gap>
 						<view style="border-bottom:2rpx solid #f7f7f7;padding-bottom: 20rpx;">
 							<u-row justify="space-between" customStyle="font-size: 24rpx;color: #aaa;">
-								<text>{{item.created | date}}</text>
+								<text>{{$u.timeFormat(item.created,'mm-dd')}}</text>
 								<u-row customStyle="flex-basis:40%" justify="space-between">
 									<u-icon name="chat" color="#aaa" label="回复" size="20" labelColor="#aaa"
 										label-size="12"></u-icon>
@@ -85,7 +94,7 @@
 						</u-row>
 					</u-col>
 					<view>
-						<u-button shape="circle" color="#FB7299" customStyle="padding:4rpx,6rpx" size="mini" text="发送"
+						<u-button shape="circle" color="#a899e6" customStyle="padding:4rpx,6rpx" size="mini" text="发送"
 							@click="reply"></u-button>
 					</view>
 				</u-row>
@@ -147,7 +156,6 @@
 						})
 					}
 				}).then(res => {
-					console.log(res,'回复')
 					if (res.data.code) {
 						this.$refs.paging.complete(res.data.data)
 					}
@@ -159,6 +167,7 @@
 				if (!status) this.pid = pid;
 				this.showComment = true
 			},
+
 			reply() {
 				if (this.commentText.length < 4) {
 					uni.$u.toast('再多说点吧~')
@@ -177,7 +186,10 @@
 						uni.$u.toast('已发送~')
 						this.commentText = null
 						this.showComment = false
-						this.$refs.paging.reload()
+						setTimeout(() => {
+							this.$refs.paging.reload()
+						}, 500)
+
 					} else {
 						uni.$u.toast(res.data.msg)
 					}

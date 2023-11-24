@@ -20,7 +20,7 @@
 		<!-- 模拟首屏开始 -->
 		<u-tabs :list="topTabbar" lineWidth="20" lineHeight="7" @change="changeTab" :current="topTabIndex"
 			:lineColor="`url(${lineBg}) 100% 100%`"
-			:activeStyle="{color: '#FB7299',fontWeight: 'bold',transform: 'scale(1.05)'}"
+			:activeStyle="{color: '#a899e6',fontWeight: 'bold',transform: 'scale(1.05)'}"
 			:inactiveStyle="{color: '#606266',transform: 'scale(1)'}"
 			itemStyle="padding-left: 30rpx; padding-right: 30rpx; height: 68rpx;">
 			<view slot="right" style="padding-left: 8rpx;margin-right: 20rpx;" @click="goCategoryList()">
@@ -30,7 +30,7 @@
 		<swiper style="height: 100%;" :current="topTabIndex" @animationfinish="animationfinish">
 			<swiper-item v-for="(page,pageIndex) in topTabbar" :key="pageIndex">
 				<articleIndex :swiper="pageIndex" :tabbar="topTabIndex" v-if="!page.isrecommend"
-					style="margin-bottom: 60rpx;">
+					style="margin-bottom: 60rpx;" :isSwiper="!pageIndex">
 				</articleIndex>
 				<water-fall-index v-else :swiper="pageIndex" :tabbar="topTabIndex"
 					style="margin-bottom: 60rpx;background: #f7f7f7;"></water-fall-index>

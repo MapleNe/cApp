@@ -1,19 +1,37 @@
 <template>
-	<view style="margin-top: 10rpx;">
-		<u-row justify="space-between">
-			<u-row v-if="!waterFall">
-				<block v-for="(tag,index) in data.tag" :key="index">
-					<view style="border-radius: 10rpx;padding:2rpx 8rpx;text-align: center;font-size: 24rpx;">
-						<text>#{{tag.name}}</text>
-					</view>
+	<view style="margin-top: 20rpx">
+		<view v-if="!waterFall" style="padding-bottom: 20rpx;">
+			<view v-if="data.tag.length>0" style="display: flex;flex-wrap: wrap;">
+				<block v-for="(item,index) in data.tag" :key="index">
+						<view style="
+						font-size: 26rpx;
+						background:#a899e61e;
+						color: #a899e6;
+						padding:8rpx 14rpx;
+						border-radius: 500rpx;
+						margin-right: 20rpx;
+						margin-bottom: 10rpx;
+						">
+							<text style="font-size: 28rpx;font-weight: 600;margin-right: 10rpx;">#</text>
+							<text>{{item.name}}</text>
+						</view>
 				</block>
+			</view>
+			<view style="margin-top: 20rpx;display: flex;justify-content: space-between;">
+				<u-icon name="eye-fill" color="#999" size="18" :label="data.views"></u-icon>
+				<u-row customStyle="flex-basis:25%" justify="space-between">
+					<u-icon name="chat" size="20"></u-icon>
+					<u-icon name="thumb-up" size="20" :label="data.likes"></u-icon>
+				</u-row>
+			</view>
+		</view>
+		<view v-else>
+			<u-row justify="space-between">
+				<u-icon name="thumb-up" size="20" :label="data.views"></u-icon>
+				<u-avatar size="20" :src="data.authorInfo.avatar"></u-avatar>
 			</u-row>
-			<u-avatar :src="data.authorInfo.avatar" size="24" v-else></u-avatar>
-			<u-row>
-				<u-icon name="thumb-up" size="20"></u-icon>
-				<text>{{data.likes}}</text>
-			</u-row>
-		</u-row>
+		</view>
+
 	</view>
 </template>
 

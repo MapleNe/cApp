@@ -2,22 +2,37 @@
 	<view>
 		<u-row justify="space-between">
 			<u-row>
-				<view @tap.stop.prevent="goProfile(data.authorId)">
-					<u-avatar :src="data.authorInfo.avatar" size="30"></u-avatar>
+				<view style="position: relative;" @tap.stop.prevent="goProfile(data.authorId)">
+					<u-avatar :src="data.authorInfo.avatar" size="34"
+						customStyle="border:4rpx solid #85a3ff32"></u-avatar>
+					<image class="avatar_head" mode="aspectFill"
+						:src="data.authorInfo.opt && data.authorInfo.opt.headStatus && data.authorInfo.opt.head_picture">
+					</image>
 				</view>
-				<text style="margin-left:20rpx"
-					:class="{'vipname':data.authorInfo.isvip}">{{data.authorInfo.name}}</text>
+				<view style="display: flex;flex-direction: column;margin-left:20rpx">
+					<text style="font-size: 30rpx;font-weight: 600;"
+						:class="{'vipname':data.authorInfo.isvip}">{{data.authorInfo.name}}</text>
+					<text style="font-size: 26rpx;color: #999;">{{$u.timeFormat(data.created,'mm-dd')}}</text>
+				</view>
 			</u-row>
-			<text
-				style="font-size:24rpx;color:white;margin-left:10rpx;background:#FB7299;padding:0 10rpx;border-radius:8rpx;box-shadow:0 0 9rpx 0 #FB7299">
-				{{data.category[0].name}}
-			</text>
 
+			<view style="display: flex;align-items: center;">
+				<view @click.stop="follow(data.authorId)">
+					<u-button v-if="!isfollow && data.authorId != userInfo.uid" plain color="#a899e6" size="mini"
+						shape="circle" customStyle="font-size:28rpx;height:50rpx">关注</u-button>
+				</view>
+				<view @click.stop="">
+					<u-icon name="more-dot-fill" size="20" customStyle="margin-left:30rpx"></u-icon>
+				</view>
+			</view>
 		</u-row>
 	</view>
 </template>
 
 <script>
+	import {
+		mapState
+	} from 'vuex';
 	export default {
 		props: {
 			data: {
@@ -27,8 +42,14 @@
 		},
 		data() {
 			return {
-
+				isfollow: false
 			}
+		},
+		computed: {
+			...mapState(['userInfo'])
+		},
+		created() {
+			this.isfollow = this.data.authorInfo.isfollow
 		},
 		methods: {
 			goArticle(data) {
@@ -47,6 +68,19 @@
 						id
 					}
 				})
+			},
+			follow(id) {
+				console.log(this.data.authorId,this.userInfo.uid)
+				if (this.userInfo.uid == id) return;
+				this.$http.post('/typechoUsers/follow', {
+					touid: id
+				}).then(res => {
+					console.log(res)
+					if (res.data.code) {
+						uni.$u.toast(res.data.msg)
+						this.isfollow = !this.isfollow
+					}
+				})
 			}
 		}
 	}
@@ -55,5 +89,9 @@
 <style lang="scss">
 	.vipname {
 		color: $c-primary;
+	}
+
+	.u-button::before {
+		background: #a899e6;
 	}
 </style>

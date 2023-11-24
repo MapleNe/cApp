@@ -1,0 +1,787 @@
+<template>
+	<view>
+		<u-navbar placeholder autoBack id="navbar">
+
+			<view slot="center">
+				<text>发布帖子</text>
+			</view>
+			<view slot="right">
+				<u-row>
+					<u-button plain color="#a899e6" size="mini">草稿箱</u-button>
+					<u-button plain color="#a899e6" size="mini" customStyle="font-size:30rpx;margin-left:20rpx"
+						@click="$u.throttle(save(),1000,true)">发布</u-button>
+				</u-row>
+			</view>
+		</u-navbar>
+		<view style="padding:20rpx 30rpx 0rpx 30rpx;" id="inputTitle">
+			<u-input v-model="article.title" placeholder="标题 (必填)" border="none"
+				customStyle="padding-bottom:10rpx;border-bottom:2rpx solid #f1f1f1"></u-input>
+		</view>
+		<editor :adjust-position="false" placeholder="灵感迸发" id="editor" @ready="onEditorReady"
+			style="width: 100%;padding:10rpx 30rpx 0rpx 30rpx;"
+			:style="{height:editorHeight - keyboardHeight - toolbarHeight - 4 -(showPanel?panelHeight:0) +'px'}"
+			@statuschange="statuschange">
+		</editor>
+		<view id="toolbar" style="background: #fff;padding: 10rpx 30rpx; 0rpx 30rpx">
+			<u-row justify="space-between" @click="showCategory = true">
+				<text>选择发布位置</text>
+				<u-row><text>{{article.category.name}}</text>
+					<u-icon name="arrow-right" color="#999"></u-icon>
+				</u-row>
+			</u-row>
+			<view style="padding-top: 30rpx;padding-bottom: 30rpx;">
+				<u-row @click="showTag = true">
+					<u-row>
+						<text>参与话题</text>
+						<u-icon name="play-right-fill" size="14" color="#999"></u-icon>
+					</u-row>
+					<scroll-view scroll-x
+						style="overflow: hidden;overflow-x: scroll;white-space: nowrap;margin-left: 20rpx;">
+						<u-row>
+							<block v-for="(item,index) in tags" :key="index">
+								<view
+									style="margin-right: 20rpx;background: #f7f7f7;padding:4rpx 20rpx;border-radius: 10rpx;">
+									{{item.name}}
+								</view>
+							</block>
+						</u-row>
+					</scroll-view>
+				</u-row>
+			</view>
+
+			<view style="padding-bottom: 20rpx;">
+				<u-row justify="space-between">
+					<u-row justify="space-between" customStyle="flex:1">
+						<u-icon name="photo" size="24" @click="chooseImage()"></u-icon>
+						<u-icon name="heart" size="24" @click="showItem('emoji')"></u-icon>
+						<u-icon name="arrow-up-fill" size="24" @click="showItem('format')"></u-icon>
+						<u-icon name="play-circle" size="24" @click="chooseVideo()"></u-icon>
+						<u-icon name="plus-circle" size="24" @click="showItem('more')"></u-icon>
+					</u-row>
+					<view style="margin-left: 140rpx;">
+						<u-icon name="setting-fill" size="20" color="#a899e6" @click="showItem('opt')"
+							customStyle="background:#a899e664;border-radius:50rpx;padding:10rpx;box-shadow: 0 0 9rpx #a899e6"></u-icon>
+					</view>
+				</u-row>
+			</view>
+			<!-- 视频处理 -->
+			<view style="display: none;" :prop="videoPath" :change:prop="capture.captures"></view>
+			<view v-if="showPanel" :style="{height:panelHeight+'px'}">
+				<!-- 表情 -->
+				<view v-show="itemName =='emoji'" style="height: 100%;">
+					<block v-for="(one,oneIndex) in emojiData" :key="oneIndex">
+						<swiper :style="{height:panelHeight-30+'px'}" v-show="emojiIndex == oneIndex">
+							<swiper-item v-for="(two,twoIndex) in one.list" :key="twoIndex">
+								<u-row justify="space-between" customStyle="flex-wrap:wrap">
+									<image :src="one.base+one.slug+'_'+three+'.'+one.format" v-for="(three,key) in two"
+										:key="key" mode="aspectFill" style="width: 100rpx;height: 100rpx;margin: 10rpx;"
+										@click="insertEmoji(one.base,one.name,one.slug,three,one.format,key)"></image>
+								</u-row>
+							</swiper-item>
+						</swiper>
+					</block>
+					<u-tabs :list="emojiData" :current="emojiIndex" lineHeight="3" lineColor="#a899e6"
+						itemStyle="height: 24px;"
+						:activeStyle="{color: '#303133',fontWeight: 'bold',transform: 'scale(1.05)'}"
+						:inactiveStyle="{color: '#606266',transform: 'scale(1)'}" @change="emojiIndex = $event.index"
+						style="position: static;"></u-tabs>
+				</view>
+				<!-- 颜色 -->
+				<view v-show="itemName=='format'" style="height: 100%;">
+					<u-row justify="space-between">
+						<u-row justify="start" v-for="(color,index) in format.color" :key="index"
+							customStyle="flex-direction:column">
+							<text :style="{background:color,padding:25+'rpx',borderRadius:50+'rpx'}"
+								@click="formatTool('color',color)"></text>
+							<u-icon name="arrow-up-fill" color="#999"
+								v-if="formatStatus && formatStatus.color&&formatStatus.color.toLowerCase() == color"></u-icon>
+						</u-row>
+					</u-row>
+					<u-row customStyle="padding-top:40rpx" justify="space-between">
+						<text v-for="(method,index) in format.method" :key="index"
+							@click="formatTool(method.tool)">{{method.name}}</text>
+						<text @click="editorCtx.removeFormat()">清除选区</text>
+						<text @click="editorCtx.undo()">撤销</text>
+					</u-row>
+				</view>
+
+				<!-- 更多 -->
+				<view v-show="itemName=='more'">
+					<u-row justify="space-between">
+						<text style="font-weight: bold;">添加文件</text>
+					</u-row>
+
+					<block v-for="(item,index) in article.opt.files" :key="index">
+						<u-row customStyle="margin-bottom:10rpx">
+							<u-col span="7">
+								<u-input placeholder="资源链接" :adjustPosition="false" border="none" font-size="12"
+									customStyle="padding: 8rpx;background:#f7f7f7;border-radius:10rpx"
+									v-model="article.opt.files[index].link"></u-input>
+							</u-col>
+							<u-col span="2" customStyle="margin-left:10rpx">
+								<u-input placeholder="提取码" :adjustPosition="false" border="none" font-size="12"
+									customStyle="padding: 8rpx;background:#f7f7f7;border-radius:10rpx"
+									v-model="article.opt.files[index].password"></u-input>
+							</u-col>
+							<u-col span="2" customStyle="margin-left:5rpx">
+								<u-input placeholder="解压密码" :adjustPosition="false" border="none" font-size="12"
+									customStyle="padding: 8rpx;background:#f7f7f7;border-radius:10rpx"
+									v-model="article.opt.files[index].unzipPass"></u-input>
+							</u-col>
+							<u-col span="1" customStyle="margin-left:10rpx">
+								<u-icon :name="article.opt.files.length>=2?'minus-circle':'plus-circle'" size="20"
+									color="#a899e6" @click="addFile(index)"></u-icon>
+							</u-col>
+						</u-row>
+					</block>
+				</view>
+
+				<!-- 设置 -->
+				<view v-show="itemName=='opt'">
+					<u-row justify="space-between">
+						<u-row customStyle="flex-direction:column" justify="start" align="top">
+							<text style="font-size: 32rpx;font-weight: bold;">创作声明</text>
+							<text style="font-size: 26rpx;color: #999;">开启之后文章显示创作声明</text>
+						</u-row>
+						<u-switch size="20" v-model="article.opt.create" activeColor="#a899e6"></u-switch>
+					</u-row>
+					<u-gap height="6"></u-gap>
+					<u-row justify="space-between">
+						<text style="font-size: 32rpx;font-weight: bold;">允许评论</text>
+						<u-switch size="20" v-model="article.allowComment" activeColor="#a899e6"></u-switch>
+
+					</u-row>
+				</view>
+			</view>
+		</view>
+		<!-- 组件 -->
+		<!-- 分类 -->
+		<u-popup mode="right" :show="showCategory" @close="showCategory = false">
+			<view style="width: 70vw;">
+				<u-gap height="60"></u-gap>
+				<view style="padding:30rpx">
+					<text style="font-weight: bold;font-size: 34rpx;">选择分类</text>
+					<view style="padding-top: 20rpx;">
+						<block v-for="(item,index) in category" :key="index">
+							<u-row @click="article.category = item;showCategory = false">
+								<text v-if="item.isrecommend" style="
+									font-size: 26rpx;
+									color:#a899e6;
+									background: #a899e63c;
+									padding:4rpx 14rpx;
+									border-radius: 10rpx;">推荐</text>
+								<text style="margin-left: 20rpx;"
+									:style="{color:article.category && article.category.mid == item.mid?'#a899e6':''}">{{item.name}}</text>
+							</u-row>
+						</block>
+					</view>
+				</view>
+			</view>
+		</u-popup>
+		<!-- 标签&&话题 -->
+		<u-popup customStyle="border-radius:40rpx 40rpx 0 0" :show="showTag" @close="showTag = false">
+			<view style="height: 70vh;padding:30rpx">
+				<view style="margin-top: 30rpx;">
+					<u-row customStyle="flex-wrap:nowrap;font-size:30rpx">
+						<text style="font-weight: bold;">标签&话题：</text>
+						<text style="color: #999;">选择相关内容、分类，获得更多浏览</text>
+					</u-row>
+					<view style="margin-top: 20rpx;">
+						<u-input prefix-icon="search" placeholder="搜索标签&话题"
+							customStyle="padding:10rpx 6rpx;background:#f7f7f7" border="none"></u-input>
+					</view>
+				</view>
+				<view style="margin-top: 40rpx;">
+					<text style="font-weight: bold;">推荐话题</text>
+					<scroll-view scroll-y style="flex:1;height: 55vh;;overflow-y: scroll;">
+						<block v-for="(item,index) in tags" :key="index">
+							<view @click="tagTap(item)">
+								<text
+									:style="{color:article.tags.some(tag=>tag.mid == item.mid)?'#a899e6':''}">{{item.name}}</text>
+							</view>
+						</block>
+					</scroll-view>
+				</view>
+			</view>
+		</u-popup>
+		<u-modal :show="showLoading" ref="uModal"
+			@close="showLoading=false;uploadErr.status = false;uploadErr.msg=null;"
+			:closeOnClickOverlay="uploadErr.status" :showConfirmButton="false"
+			:title="uploadErr.status?'上传错误':'上传中...'">
+			<u-line-progress :percentage="percentage" activeColor="#a899e6" :showText="false"
+				v-if="!uploadErr.status"></u-line-progress>
+			<text v-if="uploadErr.status">错误信息：{{uploadErr.msg}}</text>
+		</u-modal>
+		<uv-modal ref="chooseFrame" :showConfirmButton="false" :showCancelButton="false"
+			@close="videoInfo.poster?'':videoInfo.poster = videoInfo.frame[0].url" title="选择视频封面"
+			:closeOnClickOverlay="true" :zIndex="50">
+			<view style="display: flex;flex-wrap: wrap;justify-content: center;flex: 1;">
+				<block v-for="(item,index) in videoInfo.frame" :key="index">
+					<view style="position: relative;top: 0;">
+						<image :src="item.url" mode="aspectFill" @click="preview(videoInfo.frame,index)"
+							style="width: 140rpx;height: 140rpx;margin: 10rpx;border-radius: 10rpx;"></image>
+						<view
+							style="position: absolute;bottom:22rpx;right:8rpx;background-color: #fff;height:40rpx;width: 40rpx;text-align: center;border-radius: 10rpx 0 10rpx 0;box-shadow: -2px -2px 2px #0000001e;"
+							@click="videoInfo.poster = item">
+							<u-icon name="checkmark" color="#a899e6" size="18"
+								v-show="videoInfo.poster&&videoInfo.poster.url == item.url"></u-icon>
+						</view>
+					</view>
+				</block>
+				<u-button text="添加视频" color="#a899e6" shape="circle" @click="insertVideo()"></u-button>
+			</view>
+
+			<view slot="confirmButton"></view>
+		</uv-modal>
+		<uv-modal ref="publish" :closeOnClickOverlay="false" :showConfirmButton="false" :show-cancel-button="false"
+			width="300rpx">
+			<uv-loading-icon text="发布中..." mode="circle" color="#a899e6"></uv-loading-icon>
+			<view slot="confirmButton"></view>
+		</uv-modal>
+	</view>
+</template>
+
+<script>
+	import {
+		base64ToPath
+	} from 'image-tools'
+	import upload from '../../uni_modules/uview-ui/libs/config/props/upload'
+	export default {
+		data() {
+			return {
+				videoPath: null,
+				VideoFrame: [],
+				videoInfo: {
+					frame: [],
+					width: 0,
+					height: 0,
+					url: null,
+					poster: null,
+				},
+				chooseFrame: false,
+				emojiData: [],
+				percentage: 30,
+				showLoading: false,
+				showPanel: false,
+				format: {
+					color: ['#a899e6', '#5bd784', '#ffa600', '#0dd0f2', '#fb4f14', '#000000'],
+					method: [{
+						name: '粗体',
+						tool: 'bold'
+					}, {
+						name: '斜体',
+						tool: 'italic'
+					}, {
+						name: '下划线',
+						tool: 'underline'
+					}],
+					header: ['H3', 'H4']
+				},
+				formatStatus: null,
+				panelHeight: 150,
+				emojiIndex: 0,
+				itemName: null,
+				uploadErr: {
+					status: false,
+					msg: null,
+				},
+				editorCtx: null,
+				keyboardHeight: 0,
+				editorHeight: 0,
+				toolbarHeight: 0,
+				showCategory: false,
+				showTag: false,
+				category: [],
+				tags: [],
+				article: {
+					title: null,
+					text: null,
+					category: {
+						mid: 1
+					},
+					tags: [],
+					allowComment: true,
+					opt: {
+						create: false,
+						files: [{}],
+						// files:
+						// name: null,  //名称
+						// link: null,  //连接
+						// password: null, //提取密码
+						// unzipPass: null, //解压密码
+						// downloadType: null, // 网盘地址 或者直链
+						permission: [],
+						gift: [],
+						// Gift type 可选 item 可选
+					}
+				}
+			}
+		},
+		onReady() {
+			this.editorHeight = uni.getSystemInfoSync().windowHeight
+			// 去除导航高度
+			uni.createSelectorQuery().in(this).select('#navbar').boundingClientRect(data => {
+				this.editorHeight -= data.height
+			}).exec()
+			uni.createSelectorQuery().in(this).select('#inputTitle').boundingClientRect(data => {
+				this.editorHeight -= data.height
+			}).exec()
+			// 监听键盘高度
+			uni.onKeyboardHeightChange(data => {
+				this.keyboardHeight = data.height
+			})
+			// 获取工具栏高度
+			uni.createSelectorQuery().in(this).select('#toolbar').boundingClientRect(data => {
+				this.toolbarHeight = data.height
+			}).exec()
+
+		},
+		onLoad() {},
+		created() {
+			this.formatEmoji()
+			this.initData()
+		},
+		beforeRouteLeave(to, from, next) {
+
+			next()
+		},
+		methods: {
+			initData() {
+				this.getCategory()
+				this.getTags()
+			},
+
+			getCategory() {
+				this.$http.get('/typechoMetas/metasList', {
+					params: {
+						searchParams: JSON.stringify({
+							type: 'category',
+
+						}),
+					}
+				}).then(res => {
+					if (res.data.code) {
+
+						for (let i in res.data.data) {
+							if (res.data.data[i].mid == 1) this.article.category = res.data.data[i];
+						}
+						this.category = res.data.data
+					}
+				})
+			},
+			getTags() {
+				this.$http.get('/typechoMetas/metasList', {
+					params: {
+						searchParams: JSON.stringify({
+							type: 'tag',
+						}),
+						order: 'count'
+					}
+				}).then(res => {
+
+					if (res.data.code) {
+						this.tags = res.data.data
+
+					}
+				})
+			},
+			tagTap(item) {
+				// 检查标签是否已存在于数组中
+				const index = this.article.tags.findIndex(tag => tag.mid === item.mid);
+
+				if (index !== -1) {
+					// 如果存在，从数组中删除
+					this.article.tags.splice(index, 1);
+				} else {
+					// 如果不存在，加入数组
+					this.article.tags.push(item);
+				}
+			},
+
+			async chooseImage() {
+				// 重置进度条
+				this.percentage = 30;
+				try {
+					const res = await uni.chooseImage({
+						count: 20
+					});
+					let loading = 100 / res.tempFilePaths.length - this.percentage
+					let count = res.tempFilePaths.length
+					this.showLoading = true
+					for (let i in res.tempFilePaths) {
+						let image = await this.upload(res.tempFilePaths[i]);
+						count--
+						this.percentage += loading
+						this.editorCtx.insertImage({
+							src: image,
+							alt: this.article.title ? this.article.title : 'Chikata'
+						});
+					}
+					if (!count) {
+						setTimeout(() => {
+							this.showLoading = false;
+						}, 200)
+					}
+					// 图片插入完成插入换行
+					this.editorCtx.insertText({
+						text: '\n'
+					});
+				} catch (error) {
+
+				}
+			},
+			// 选择视频
+			chooseVideo() {
+				// 重置进度条
+				this.percentage = 30;
+				uni.chooseVideo({
+					extension: ['mp4', 'avi', 'webm'],
+					compressed: true,
+					success: (res) => {
+						this.videoPath = res.tempFilePath
+						this.videoInfo.width = res.width
+						this.videoInfo.height = res.width
+					}
+				})
+			},
+			async captureList({
+				list,
+				duration
+			}) {
+				this.videoInfo.frame = list
+				console.log(list)
+
+				//开始上传
+				this.showLoading = true
+				let video = await this.uploadFile(this.videoPath, 'video')
+				if (video) {
+					this.videoInfo.url = video
+					setTimeout(() => {
+						this.showLoading = false
+						this.$refs.chooseFrame.open()
+					}, 200)
+				}
+			},
+			preview(url, index) {
+				uni.previewImage({
+					urls: url[index].base64
+				})
+			},
+			uploadFile(url, type) {
+				return new Promise((resolve, reject) => {
+					this.$http.upload('/upload/full', {
+						fileType: type, // 仅允许video/image/audio
+						filePath: url, //不支持多文件上传使用filePath
+						name: 'file',
+					}).then(res => {
+						console.log(res)
+						if (res.data.code) {
+							resolve(res.data.data.url)
+						} else {
+							this.uploadErr.status = true
+							this.uploadErr.msg = res.data.msg
+							uni.hideLoading()
+						}
+					}).catch(err => {
+						console.log(err)
+						this.uploadErr.status = true
+						this.uploadErr.msg = err.data.msg
+					})
+				})
+
+			},
+			upload(image) {
+				return new Promise((resolve, reject) => {
+					this.$http.upload('/upload/full', {
+						filePath: image,
+						name: 'file',
+					}).then(res => {
+						console.log(res)
+						if (res.data.code) {
+							resolve(res.data.data.url)
+						} else {
+							this.uploadErr.status = true
+							this.uploadErr.msg = res.data.msg
+						}
+					}).catch(err => {
+						console.log(err)
+						this.uploadErr.status = true
+						this.uploadErr.msg = res.data.msg
+					})
+				})
+			},
+			save() {
+				if (this.article.title < 4) {
+					uni.$u.toast('标题太短')
+					return
+				}
+				this.editorCtx.getContents({
+					success: res => {
+						this.article.text = res.html.replace(/<img\s+[^>]*alt="([^"]+)_emoji"[^>]*>/g,
+							function(
+								match,
+								alt) {
+								// 替换成_(提取的alt)_
+								return `_|#${alt}|`;
+							});
+					}
+				})
+				if (this.article.text&&this.article.text.length < 10) {
+					uni.$u.toast('再多写点吧~')
+					return
+				}
+				this.$refs.publish.open()
+				let tags = this.article.tags.map(tag => tag.mid).join(',')
+				this.$http.post('/typechoContents/contentsAdd', {
+					params: JSON.stringify({
+						title: this.article.title,
+						text: this.article.text,
+						category: this.article.category.mid,
+						tag: tags,
+						opt: JSON.stringify(this.article.opt),
+					}),
+					text: this.article.text,
+				}).then(res => {
+					if (res.data.code) {
+						setTimeout(() => {
+							this.$refs.publish.close()
+							uni.$u.toast(res.data.msg)
+							setTimeout(() => {
+								this.$Router.back(1)
+							}, 800)
+						}, 1500)
+					} else {
+						uni.$u.toast(res.data.msg)
+						this.$refs.publish.close()
+					}
+				})
+			},
+			showItem(item) {
+				if (this.itemName != item) {
+					this.itemName = item
+					this.showPanel = true
+				} else {
+					this.itemName = null
+					this.showPanel = false
+				}
+			},
+			formatEmoji() {
+				// 处理后的数据
+				let result = [];
+
+				// 每页表情对象的数量
+				const pageSize = 10;
+
+				// 遍历原始数据中的每个 item
+				this.$emoji.data.forEach(item => {
+					// 构建一个新的 item 对象
+					let newItem = {
+						"name": item.name,
+						"slug": item.slug,
+						"base": item.base,
+						"format": item.format,
+						"list": []
+					};
+					// 遍历原始数据中的每个子列表
+					let page = 1;
+					let pageList = {}; // 用于存储每一页的表情对象
+					Object.entries(item.list).forEach(([key, value]) => {
+						// 将表情对象添加到当前页的列表中
+						pageList[key] = value;
+
+						// 如果达到一页的数量，将当前页列表添加到 newItem 的 list 中，重置页码和列表
+						if (Object.keys(pageList).length === pageSize) {
+							newItem.list.push(pageList);
+							page++;
+							pageList = {};
+						}
+					});
+
+					// 添加最后一页的表情对象，如果不为空的话
+					if (Object.keys(pageList).length > 0) {
+						newItem.list.push(pageList);
+					}
+
+					// 将新的 item 添加到结果数组中
+					result.push(newItem);
+				});
+
+				this.emojiData = result;
+
+			},
+			insertEmoji(base, name, slug, emoji, format, key) {
+				this.editorCtx.insertImage({
+					src: base + slug + '_' + emoji + '.' + format,
+					alt: name + '_' + key + '_' + 'emoji',
+					width: '50px',
+					height: '50px',
+					data: {
+						name: name,
+						emoji: emoji,
+						format: format
+					},
+					success: res => {
+						this.editorCtx.insertText({
+							text: '  '
+						})
+					}
+				})
+			},
+			formatImage(base64) {
+				return new Promise((resolve, reject) => {
+					base64ToPath(base64).then(res => {
+						resolve(res)
+					})
+				})
+			},
+			async insertVideo() {
+				uni.showLoading({
+					title: '插入中...',
+					mask: true
+				})
+				let file = await this.formatImage(this.videoInfo.poster.base64);
+				let poster = await this.uploadFile(file, 'image');
+				console.log(poster)
+				if (poster) {
+					this.editorCtx.insertImage({
+						src: poster,
+						alt: `src=${this.videoInfo.url}|poster=${poster}|type=video`,
+						width: '100%',
+						height: '200px',
+						data: {
+							type: 'video',
+							poster: poster,
+							src: this.videoInfo.url,
+						},
+						success: (res) => {
+							this.editorCtx.insertText({
+								text: '\n\n'
+							})
+							uni.hideLoading()
+							this.$refs.chooseFrame.close()
+						}
+					})
+				}
+			},
+
+			formatTool(type, value) {
+				this.editorCtx.format(type, value)
+			},
+			con() {
+				this.editorCtx.getContents({
+					success: res => {
+
+					}
+
+				})
+			},
+			onEditorReady() {
+				// #ifdef MP-BAIDU
+				this.editorCtx = requireDynamicLib('editorLib').createEditorContext('editor');
+				// #endif
+
+				// #ifdef APP-PLUS || H5 ||MP-WEIXIN
+				uni.createSelectorQuery().select('#editor').context((res) => {
+					this.editorCtx = res.context
+				}).exec()
+				// #endif
+			},
+			statuschange(event) {
+				this.formatStatus = event.detail
+			},
+			addFile(index) {
+				if (this.article.opt.files.length < 2) {
+					// 如果数组长度小于2，执行添加操作
+					this.article.opt.files.push({});
+				} else {
+					// 否则，执行删除操作
+					this.article.opt.files.splice(index, 1);
+				}
+			},
+		}
+	}
+</script>
+<script module="capture" lang="renderjs">
+	export default {
+		methods: {
+			async captures(videoPath) {
+				let duration = await this.getDuration(videoPath)
+				let list = []
+				for (let i = 0; i < 12; i++) {
+					const frame = await this.captureFrame(videoPath, duration / 1000 * i)
+					list.push(frame)
+				}
+				this.$ownerInstance.callMethod('captureList', {
+					list,
+					duration
+				})
+			},
+			getDuration(videoPath) {
+				return new Promise(resolve => {
+					const vdo = document.createElement('video')
+					vdo.src = videoPath
+					vdo.addEventListener('loadedmetadata', () => {
+						const duration = Math.floor(vdo.duration);
+						vdo.remove();
+						resolve(duration)
+					});
+				})
+			},
+			captureFrame(videoPath, time = 0) {
+				return new Promise((resolve) => {
+					const vdo = document.createElement('video')
+					// video元素没有加到dom上，video播放到currentTime（当前帧）结束
+					// 定格时间，截取帧
+					vdo.currentTime = time
+					// 设置自动播放，不播放是黑屏状态，截取不到帧画面
+					// 静音状态下允许自动播放
+					vdo.muted = true
+					vdo.autoplay = true
+					vdo.crossOrigin = 'anonymous'
+					vdo.src = videoPath
+					vdo.oncanplay = async () => {
+						const frame = await this.drawVideo(vdo)
+						resolve(frame)
+					}
+				})
+			},
+			drawVideo(vdo) {
+				return new Promise((resolve) => {
+					const cvs = document.createElement('canvas')
+					const ctx = cvs.getContext('2d')
+					cvs.width = vdo.videoWidth
+					cvs.height = vdo.videoHeight
+					ctx.drawImage(vdo, 0, 0, cvs.width, cvs.height)
+
+					// 创建blob对象
+					cvs.toBlob((blob) => {
+						var reader = new FileReader();
+						reader.readAsDataURL(blob);
+						reader.onload = function(e) {
+							resolve({
+								blob,
+								base64: e.target.result,
+								url: URL.createObjectURL(blob),
+							})
+						}
+
+					})
+				})
+			},
+		}
+	}
+</script>
+
+
+<style>
+	page {
+		background: #f7f7f7;
+	}
+
+	.panel {
+		transform: translateY(10vh);
+		transition: transform 0.3s ease;
+		background: #fff;
+
+	}
+</style>
