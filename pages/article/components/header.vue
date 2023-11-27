@@ -30,8 +30,6 @@
 					:text="data.authorInfo.isfollow?'已关注':'关注'" @click="$emit('follow',data.authorId)"></u-button>
 			</view>
 		</u-row>
-
-
 	</view>
 </template>
 
@@ -62,11 +60,7 @@
 </script>
 
 <style lang="scss">
-	.vipname {
-		color: $c-primary;
-	}
-
 	.u-button::before {
-		background: #a899e6;
+		background: $c-primary;
 	}
 </style>

@@ -13,12 +13,15 @@
 				"navigationBarTitleText": "",
 				"enablePullDownRefresh": false
 			}
-			
+
 		}, {
 			"path": "pages/article/article",
 			"style": {
 				"navigationBarTitleText": "",
-				"enablePullDownRefresh": false
+				"enablePullDownRefresh": false,
+				"app-plus": {
+					"softinputmode": "nothing"
+				}
 			}
 
 		},
@@ -60,7 +63,7 @@
 				"enablePullDownRefresh": false
 
 			},
-			"name": "article",
+			"name": "articlePublish",
 			"perm": "login"
 		},
 		{
@@ -90,20 +93,56 @@
 			"perm": "login"
 		},
 		{
-			"path" : "pages/article/components/comments/subComment",
-			"style" : 
-			{
-				"navigationBarTitleText" : "",
-				"enablePullDownRefresh" : false
+			"path": "pages/article/components/comments/subComment",
+			"style": {
+				"navigationBarTitleText": "",
+				"enablePullDownRefresh": false
 			}
 		},
 		{
-			"path" : "pages/common/category/categoryInfo",
-			"style" : 
-			{
-				"navigationBarTitleText" : "",
-				"enablePullDownRefresh" : false
+			"path": "pages/common/category/categoryInfo",
+			"style": {
+				"navigationBarTitleText": "",
+				"enablePullDownRefresh": false
 			}
+		},
+		{
+			"path": "publish/article/photo",
+			"style": {
+				"navigationBarTitleText": "",
+				"enablePullDownRefresh": false
+			},
+			"name": "photo",
+			"perm": "login"
+		},
+		{
+			"path": "pages/notice/private",
+			"style": {
+				"navigationBarTitleText": "",
+				"enablePullDownRefresh": false
+			}
+		}, {
+			"path": "uni_modules/rt-uni-update/components/rt-uni-update/rt-uni-update",
+			"style": {
+				"app-plus": {
+					"animationDuration": 200,
+					"animationType": "fade-in",
+					"background": "transparent",
+					"backgroundColorTop": "transparent",
+					"popGesture": "none",
+					"scrollIndicator": false,
+					"titleNView": false
+				},
+				"disableScroll": true
+			}
+		},
+		{
+			"path": "pages/user/manage",
+			"style": {
+				"navigationBarTitleText": "",
+				"enablePullDownRefresh": false
+			},
+			"name": "manage"
 		}
 	],
 	"globalStyle": {
@@ -114,7 +153,8 @@
 		"navigationStyle": "custom",
 		"app-plus": {
 			"bounce": "none",
-			"scrollIndicator": "none"
+			"scrollIndicator": "none",
+			"softinputmode": "nothing"
 		}
 	},
 	"uniIdRouter": {},

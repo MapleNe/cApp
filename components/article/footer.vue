@@ -18,7 +18,7 @@
 				</block>
 			</view>
 			<view style="margin-top: 20rpx;display: flex;justify-content: space-between;">
-				<u-icon name="eye-fill" color="#999" size="18" :label="data.views"></u-icon>
+				<u-icon name="eye-fill" color="#999" size="18" :label="data.commentsNum"></u-icon>
 				<u-row customStyle="flex-basis:25%" justify="space-between">
 					<u-icon name="chat" size="20"></u-icon>
 					<u-icon name="thumb-up" size="20" :label="data.likes"></u-icon>
@@ -57,12 +57,5 @@
 </script>
 
 <style lang="scss">
-	.category {
-		background: rgba($c-primary, 0.1);
-		color: $c-primary;
-	}
-
-	.primary {
-		color: $c-primary;
-	}
+	
 </style>

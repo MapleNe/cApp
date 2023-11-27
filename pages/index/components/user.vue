@@ -15,11 +15,11 @@
 						</u-row>
 					</view>
 					<u-icon name="setting" slot="right" size="26" :color="opacity>0.4? 'black':'white'"
-											@click="showRightMenu = true"></u-icon>
+						@click="showRightMenu = true"></u-icon>
 				</u-navbar>
 			</template>
 			<image :src="userInfo.userBg?userInfo.userBg:'/static/login.png'" mode="aspectFill"
-				style="width: 100%;height: 400rpx;transform: scale(1);"></image>
+				style="width: 100%;height: 400rpx;transform: scale(1);" @click="chooseBackImg()"></image>
 			<view class="userPanel">
 				<view style="position: absolute;top: -80rpx;">
 					<u-avatar :src="userInfo.avatar" size="80">
@@ -125,6 +125,13 @@
 					</block>
 				</view>
 			</block>
+			<!-- 管理面板 -->
+			<view style="margin:20rpx 20rpx 0 20rpx; background: #fff;border-radius: 20rpx;" v-if="userInfo && userInfo.groupKey =='administrator'">
+				<u-row customStyle="padding:30rpx" @click="goPage('manage')">
+					<u-icon name="setting" size="24"></u-icon>
+					<text style="margin-left:20rpx;font-weight: 600;">管理面板</text>
+				</u-row>
+			</view>
 			<view style="position: fixed;bottom: 0;margin: 20rpx;background: #fff;border-radius: 20rpx; width: 65vw;">
 				<u-row justify="space-between" @click="goLogout">
 					<block v-for="(item,index) in static">
@@ -137,6 +144,10 @@
 				</u-row>
 			</view>
 		</u-popup>
+		<l-clipper v-if="backgroundShow" :image-url="cropperBg"
+			@success="upload($event.url,false); backgroundShow = false" @cancel="backgroundShow = false" is-limit-move
+			is-lock-ratio :width="1280" :height="720" :min-width="1280" :min-height="720" :max-width="1920"
+			:max-height="720" style="z-index: 99999;" />
 	</view>
 </template>
 
@@ -169,6 +180,8 @@
 			return {
 				showRightMenu: false,
 				isMounted: false,
+				backgroundShow: false,
+				cropperBg: null,
 				rightMenuItem: {
 					personl: [{
 							name: '个人信息',
@@ -306,7 +319,11 @@
 				})
 			},
 			getUserMeta() {
-				this.$http.post('/typechoUsers/userData').then(res => {
+				this.$http.get('/typechoUsers/userData', {
+					params: {
+						token: this.$store.state.hasLogin ? uni.getStorageSync('token') : ''
+					}
+				}).then(res => {
 					if (res.data.code) {
 						this.$store.commit('setUserMeta', res.data.data)
 					}
@@ -329,6 +346,40 @@
 					path: '/pages/profile/profile',
 					query: {
 						id: this.userInfo.uid
+					}
+				})
+			},
+			chooseBackImg() {
+				uni.chooseImage({
+					count: 1,
+					sourceType: ['album'],
+					success: (res) => {
+						this.cropperBg = res.tempFilePaths[0];
+						this.backgroundShow = true
+					}
+				})
+			},
+			upload(url, ) {
+				this.$http.upload('/upload/full', {
+					filePath: url,
+					name: 'file'
+				}).then(res => {
+					if (res.data.code) {
+						this.save(res.data.data.url)
+					}
+				})
+			},
+			save(url) {
+				this.$http.post('/typechoUsers/userEdit', {
+					params: JSON.stringify({
+						uid: this.userInfo.uid,
+						name: this.userInfo.name,
+						userBg: url
+					})
+				}).then(res => {
+					console.log(res)
+					if (res.data.code) {
+						this.getUserInfo()
 					}
 				})
 			},
@@ -379,6 +430,7 @@
 		padding: 0 40rpx 40rpx 40rpx;
 		border-bottom: 1rpx solid #f7f7f7;
 	}
+
 	.u-button::before {
 		background: #a899e6;
 	}

@@ -18,11 +18,11 @@
 
 			<view style="display: flex;align-items: center;">
 				<view @click.stop="follow(data.authorId)">
-					<u-button v-if="!isfollow && data.authorId != userInfo.uid" plain color="#a899e6" size="mini"
-						shape="circle" customStyle="font-size:28rpx;height:50rpx">关注</u-button>
+					<u-button v-if="!isfollow && data.authorId !== userInfo.uid" plain color="#a899e6" size="mini"
+						shape="circle" customStyle="font-size:28rpx;height:50rpx" @click="$emit('follow',true)">关注</u-button>
 				</view>
 				<view @click.stop="">
-					<u-icon name="more-dot-fill" size="20" customStyle="margin-left:30rpx"></u-icon>
+					<u-icon name="more-dot-fill" size="20" customStyle="margin-left:30rpx" @click="$emit('menuTap',true)"></u-icon>
 				</view>
 			</view>
 		</u-row>
@@ -70,7 +70,6 @@
 				})
 			},
 			follow(id) {
-				console.log(this.data.authorId,this.userInfo.uid)
 				if (this.userInfo.uid == id) return;
 				this.$http.post('/typechoUsers/follow', {
 					touid: id
@@ -87,11 +86,7 @@
 </script>
 
 <style lang="scss">
-	.vipname {
-		color: $c-primary;
-	}
-
 	.u-button::before {
-		background: #a899e6;
+		background: $c-primary;
 	}
 </style>

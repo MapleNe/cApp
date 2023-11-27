@@ -163,15 +163,19 @@
 					<text style="font-weight: bold;font-size: 34rpx;">选择分类</text>
 					<view style="padding-top: 20rpx;">
 						<block v-for="(item,index) in category" :key="index">
-							<u-row @click="article.category = item;showCategory = false">
+							<u-row @click="article.category = item;showCategory = false" style="margin-bottom: 20rpx;">
 								<text v-if="item.isrecommend" style="
 									font-size: 26rpx;
 									color:#a899e6;
 									background: #a899e63c;
 									padding:4rpx 14rpx;
 									border-radius: 10rpx;">推荐</text>
-								<text style="margin-left: 20rpx;"
-									:style="{color:article.category && article.category.mid == item.mid?'#a899e6':''}">{{item.name}}</text>
+								<u-row>
+									<u-avatar :src="item.imgurl" size="30" shape="square" v-if="item.imgurl"
+										mode="aspectFill"></u-avatar>
+									<text style="margin-left: 20rpx;"
+										:style="{color:article.category && article.category.mid == item.mid?'#a899e6':''}">{{item.name}}</text>
+								</u-row>
 							</u-row>
 						</block>
 					</view>
@@ -515,47 +519,50 @@
 					uni.$u.toast('标题太短')
 					return
 				}
+
 				this.editorCtx.getContents({
 					success: res => {
 						this.article.text = res.html.replace(/<img\s+[^>]*alt="([^"]+)_emoji"[^>]*>/g,
-							function(
-								match,
-								alt) {
-								// 替换成_(提取的alt)_
+							function(match, alt) {
 								return `_|#${alt}|`;
 							});
+
+						if (this.article.text.length < 20) {
+							uni.$u.toast('再多写点吧~');
+							return;
+						}
+
+						this.$refs.publish.open();
+						let tags = this.article.tags.map(tag => tag.mid).join(',');
+						this.$http.post('/typechoContents/contentsAdd', {
+							params: JSON.stringify({
+								title: this.article.title,
+								text: this.article.text,
+								category: this.article.category.mid,
+								mid: this.article.category.mid,
+								tag: tags,
+								opt: JSON.stringify(this.article.opt),
+							}),
+							text: this.article.text,
+						}).then(res => {
+							if (res.data.code) {
+								setTimeout(() => {
+									this.$refs.publish.close();
+									uni.$u.toast(res.data.msg);
+									setTimeout(() => {
+										this.$Router.back(1);
+									}, 800);
+								}, 1500);
+							} else {
+								uni.$u.toast(res.data.msg);
+								this.$refs.publish.close();
+							}
+						});
 					}
-				})
-				if (this.article.text&&this.article.text.length < 10) {
-					uni.$u.toast('再多写点吧~')
-					return
-				}
-				this.$refs.publish.open()
-				let tags = this.article.tags.map(tag => tag.mid).join(',')
-				this.$http.post('/typechoContents/contentsAdd', {
-					params: JSON.stringify({
-						title: this.article.title,
-						text: this.article.text,
-						category: this.article.category.mid,
-						tag: tags,
-						opt: JSON.stringify(this.article.opt),
-					}),
-					text: this.article.text,
-				}).then(res => {
-					if (res.data.code) {
-						setTimeout(() => {
-							this.$refs.publish.close()
-							uni.$u.toast(res.data.msg)
-							setTimeout(() => {
-								this.$Router.back(1)
-							}, 800)
-						}, 1500)
-					} else {
-						uni.$u.toast(res.data.msg)
-						this.$refs.publish.close()
-					}
-				})
+				});
 			},
+
+
 			showItem(item) {
 				if (this.itemName != item) {
 					this.itemName = item
