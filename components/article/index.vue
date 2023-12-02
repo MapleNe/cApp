@@ -1,14 +1,14 @@
 <template>
 	<view>
-		<z-paging ref="paging" v-model="content" @query="getData" :auto="false" style="margin-bottom: 180rpx;">
-			<view style="margin: 20rpx;" v-if="isSwiper">
+		<z-paging ref="paging" v-model="content" @query="getData" :auto="false" :auto-clean-list-when-reload="false" :auto-scroll-to-top-when-reload="false" style="margin-bottom: 180rpx;">
+			<view style="margin: 20rpx;" v-if="isSwiper" @onRefresh="onRefresh">
 				<u-swiper height="160" :list="swiperList" keyName="image" :autoplay="false" circular
 					@click="swiperTap"></u-swiper>
 			</view>
 			<block v-for="(item,index) in content" :key="index">
 				<view @tap.stop="goArticle(item)" style="margin:30rpx 30rpx 0rpx 30rpx;padding-bottom: 10rpx;">
 					<article-header :data="item" @follow="$refs.paging.reload()"
-						@menuTap="showMenu= true"></article-header>
+						@menuTap="$emit('edit',$event)"></article-header>
 					<article-content :data="item"></article-content>
 					<article-footer :data="item"></article-footer>
 				</view>
@@ -73,6 +73,8 @@
 				content: [],
 				is_loaded: false,
 				swiperList: [],
+				data: null,
+				showMenu: false,
 
 			};
 		},
@@ -97,6 +99,8 @@
 						this.$refs.paging.complete(res.data.data);
 						this.is_loaded = true
 					}
+				}).catch(err => {
+					this.$refs.paging.complete(false)
 				})
 			},
 			getSwiper() {
@@ -133,6 +137,9 @@
 						id: data.cid
 					}
 				})
+			},
+			onRefresh(){
+				this.getSwiper()
 			}
 		}
 	}

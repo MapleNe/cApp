@@ -1,6 +1,6 @@
 <template>
 	<z-paging-swiper>
-		<index @avatarTap="avatarTap()" v-show="tabbarIndex == 0"></index>
+		<index @avatarTap="avatarTap()" v-show="tabbarIndex == 0" @edit="showMoreMenu = true;data=$event"></index>
 		<find v-show="tabbarIndex == 1" :index="tabbarIndex"></find>
 		<notice v-show="tabbarIndex == 3" :index="tabbarIndex"></notice>
 		<user v-show="tabbarIndex == 4" :index="tabbarIndex"></user>
@@ -10,18 +10,17 @@
 			<u-row justify="space-between" customStyle="padding:10rpx 30rpx 20rpx 30rpx;background:white;z-index:999">
 				<block v-for="(item,index) in tabbar" :key="index">
 					<u-row customStyle="flex-direction:column" @click="tabbarTap(index)" v-if="index!=4">
-						<view style="position: relative;">
-							<u-icon :name="item.icon" size="22" :color="item.active?'#a899e6':''"
+						<view style="position: relative;padding: 20rpx;">
+							<u-icon :name="item.icon" size="22" :color="item.active?'#85a3ff':''"
 								customStyle="z-index:2"
 								:class="{'animate__animated animate__zoomIn':item.active}"></u-icon>
-							<u-badge :isDot="true" bgColor="#a899e6c4" :offset="[12,7]" absolute
+							<u-badge :isDot="true" bgColor="#85a3ffc4" :offset="[12,7]" absolute
 								customStyle="z-index: 1;" v-if="item.active&&item.type!='midbutton'"
 								:class="{'animate__animated animate__heartBeat':item.active}"></u-badge>
 						</view>
-						<text :style="{color:item.active?'#a899e6':'',fontSize:30+'rpx'}">{{item.name}}</text>
 					</u-row>
 					<u-avatar :src="$store.state.userInfo.avatar" v-else size="35"
-						customStyle="border:6rpx solid #a899e6" @click="tabbarTap(index)"
+						customStyle="border:6rpx solid #85a3ff" @click="tabbarTap(index)"
 						:class="{'animate__animated animate__pulse':tabbarIndex==4}"></u-avatar>
 				</block>
 			</u-row>
@@ -32,15 +31,15 @@
 				<view style="position: relative;text-align: center;">
 					<u--text text="发布文章" size="16" bold customStyle="z-index:1"></u--text>
 					<view
-						style="z-index: 0;position: absolute;background-color: #a899e6;top: 30rpx;padding: 6rpx 68rpx;box-shadow: 0 0 9px 0 #a899e6;border-radius: 500rpx;">
+						style="z-index: 0;position: absolute;background-color: #85a3ff;top: 30rpx;padding: 6rpx 68rpx;box-shadow: 0 0 9px 0 #85a3ff;border-radius: 500rpx;">
 					</view>
 				</view>
 				<u-row justify="space-around"
 					customStyle="margin-top:30rpx;border-bottom:1rpx solid #cccccc36;padding-bottom:40rpx">
 					<block v-for="(item,index) in publish" :key="index">
 						<u-row customStyle="flex-direction:column;" @click="goPublish(item);showPublish = false">
-							<view style="background: #a899e64c;border-radius: 500rpx;padding: 15rpx;">
-								<u-icon :name="item.icon" size="30" color="#a899e6"></u-icon>
+							<view style="background: #85a3ff4c;border-radius: 500rpx;padding: 15rpx;">
+								<u-icon :name="item.icon" size="30" color="#85a3ff"></u-icon>
 							</view>
 							<text style="margin-top: 10rpx;">{{item.name}}</text>
 						</u-row>
@@ -53,6 +52,41 @@
 				</view>
 			</view>
 		</u-popup>
+		<u-popup :show="showMoreMenu" @close="showMoreMenu = false" :closeable="true" round="10">
+			<view style="padding: 30rpx;">
+				<view style="text-align: center;color: #999;">
+					<text>分享至</text>
+				</view>
+				<view style="margin-top: 50rpx;">
+					<u-row customStyle="border-bottom:1rpx solid #85a3ff0a;padding-bottom:30rpx"
+						justify="space-between">
+						<block v-for="(item,index) in share" :key="index">
+							<u-row align="center" customStyle="flex-direction:column">
+								<view style="padding: 20rpx;border-radius: 100rpx;" :style="{background:item.color}">
+									<u-icon :name="item.icon" color="white" size="24"></u-icon>
+								</view>
+								<text style="margin-top: 20rpx;">{{item.name}}</text>
+							</u-row>
+						</block>
+					</u-row>
+					<view style="display: flex;flex-direction: column;margin-top: 50rpx;">
+						<u-row customStyle="margin:20rpx 0">
+							<u-icon name="thumb-down" size="24"></u-icon>
+							<text style="margin-left:10rpx">我不喜欢这类内容</text>
+						</u-row>
+						<u-row customStyle="margin:20rpx 0">
+							<u-icon name="share" size="24"></u-icon>
+							<text style="margin-left:10rpx">复制链接</text>
+						</u-row>
+						<u-row customStyle="margin:20rpx 0">
+							<u-icon name="more-dot-fill" size="24"></u-icon>
+							<text style="margin-left:10rpx">通过系统分享</text>
+						</u-row>
+					</view>
+				</view>
+			</view>
+		</u-popup>
+
 	</z-paging-swiper>
 
 </template>
@@ -76,6 +110,8 @@
 					name: '首页',
 				}],
 				page: 1,
+				data: null,
+				showMoreMenu: false,
 				topTabIndex: 0,
 				tabbarIndex: 0,
 				showPublish: false,
@@ -97,6 +133,23 @@
 						icon: 'play-circle',
 						path: 'video'
 					},
+				],
+				share: [{
+						name: '微信',
+						icon: 'weixin-fill',
+						color: 'green'
+					},
+					{
+						name: '朋友圈',
+						icon: 'moments',
+						color: 'green'
+					},
+					{
+						name: 'QQ',
+						icon: 'qq-fill',
+						color: 'blue'
+					},
+
 				],
 				tabbar: [{
 						name: '首页',
@@ -179,7 +232,7 @@
 				this.tabbarIndex = 4
 			},
 			goPublish(data) {
-				if(!data) return;
+				if (!data) return;
 				this.$Router.push({
 					name: data.path
 				})

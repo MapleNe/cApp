@@ -5,14 +5,13 @@
 			<view style="display: flex;justify-content: center;height: 400rpx;align-items: center;">
 				<view style="position: relative;">
 					<u-avatar :src="userInfo.avatar" :size="85"></u-avatar>
-					<image :src="userInfo&& userInfo.opt && userInfo.opt.headStatus && userInfo.opt.head_picture"
+					<image :src="userInfo&& userInfo.opt && userInfo.opt.head_picture"
 						class="avatar_head" mode="aspectFill"></image>
 				</view>
 
 			</view>
 			<view style="margin-top: 30rpx;">
-				<text
-					style="background: #a899e61a;color: #a899e6;font-size: 28rpx;padding:4rpx 14rpx;border-radius: 10rpx;">自定义</text>
+				<text style="background: #85a3ff1a;color: #85a3ff;padding:8rpx 16rpx;border-radius: 10rpx;">自定义</text>
 			</view>
 
 		</view>
@@ -51,7 +50,7 @@
 				this.$http.get('/typechoUsers/headpictureList', {
 					params: {
 						page,
-						limit,
+						limit:50,
 						searchParams: JSON.stringify({
 							type: 0
 						}),
@@ -64,9 +63,12 @@
 					}
 				})
 			},
-			setHeadPicture(item) {
+			setHeadPicture(data) {
 				let opt = this.userInfo.opt
-				opt.head_picture = item.link
+				if (!opt) {
+					opt = {}
+				}
+				opt.head_picture = data.id
 				this.$http.post('/typechoUsers/userEdit', {
 					params: JSON.stringify({
 						name: this.userInfo.name,

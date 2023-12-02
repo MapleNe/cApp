@@ -1,27 +1,27 @@
 <template>
 	<z-paging-swiper>
 		<z-paging ref="comments" v-model="comments" @query="getComments" :auto-scroll-to-top-when-reload="false"
-			:auto-clean-list-when-reload="false" v-show="!loading" @scroll="onScroll">
+			:auto-clean-list-when-reload="false" v-show="!loading" @scroll="onScroll" @onRefresh="onRefresh">
 			<template #top>
 				<u-navbar placeholder fixed style="z-index: 10;">
 					<view slot="left" style="display:flex;align-items: center;">
 						<u-icon name="arrow-left" size="20" @click="$Router.back()"></u-icon>
 						<view style="margin-left: 40rpx;display: flex;align-items: center;"
-							@click="goProfile(article.authorId)" v-if="showNavAvatar">
-							<u-avatar :src="article.authorInfo.avatar" size="28"
+							@click="goProfile(article.authorId)" v-show="showNavAvatar">
+							<u-avatar :src="article && article.authorInfo && article.authorInfo.avatar" size="28"
 								customStyle="border:4rpx solid #85a3ff32"></u-avatar>
 							<text
-								style="font-weight: 600;font-size: 30rpx;margin-left: 20rpx;">{{article.authorInfo.name}}</text>
+								style="font-weight: 600;font-size: 30rpx;margin-left: 20rpx;">{{article && article.authorInfo && article.authorInfo.name}}</text>
 						</view>
 					</view>
 					<view slot="right">
 						<view v-if="showNavAvatar"
 							style="display: flex; align-items: center;border-radius: 50rpx;border:2rpx solid #85a3ff32;padding: 8rpx 16rpx;">
 							<u-row customStyle="margin-right:20rpx;" @click="follow(article.authorId)">
-								<u-icon name="plus" size="12" :color="article.authorInfo.isfollow?'':'#a899e6'"
+								<u-icon name="plus" size="12" :color="article.authorInfo.isfollow?'':'#85a3ff'"
 									v-if="!article.authorInfo.isfollow"></u-icon>
 								<text style="font-size: 26rpx;margin-left: 10rpx;padding-right:20rpx;"
-									:style="{color:article.authorInfo.isfollow?'':'#a899e6'}">{{article.authorInfo.isfollow?'已关注':'关注'}}</text>
+									:style="{color:article.authorInfo.isfollow?'':'#85a3ff'}">{{article.authorInfo.isfollow?'已关注':'关注'}}</text>
 							</u-row>
 							<u-icon name="more-dot-fill" @click="showMore = true"></u-icon>
 						</view>
@@ -38,7 +38,7 @@
 			<u-gap height="8" bgColor="#85a3ff0a"></u-gap>
 			<!-- #ifdef APP -->
 			<u-sticky bgColor="#fff">
-				<view style="position: relative;top: 0;padding: 30rpx 30rpx 0 30rpx;">
+				<view style="position: relative;top: 0;padding: 30rpx 30rpx 0 30rpx;" @touchmove.stop>
 					<u-row>
 						<view @click="showOrderList = !showOrderList" style="display: flex; align-items: center;">
 							<text style="margin-right: 10rpx;">{{orderName}}</text>
@@ -54,9 +54,10 @@
 								style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.5);">
 							</view>
 							<view
-								style="font-size: 30rpx;color:#a899e6;display: flex;flex-direction: column;position: absolute; top: 100rpx; left: 30rpx; background-color: #fff; padding: 10rpx; border-radius: 20rpx; box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);">
+								style="font-size: 30rpx;color:#85a3ff;display: flex;flex-direction: column;position: absolute; top: 100rpx; left: 30rpx; background-color: #fff; padding: 10rpx; border-radius: 20rpx; box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);">
 								<block v-for="(item,index) in orderList" :key="index">
-									<text @click.stop="orderTap(item.name)" style="padding: 15rpx;">{{item.name}}</text>
+									<text @click.stop="orderTap(item.name);$refs.comments.reload()"
+										style="padding: 15rpx;">{{item.name}}</text>
 								</block>
 							</view>
 						</view>
@@ -66,7 +67,7 @@
 			<!-- #endif -->
 			<!-- #ifndef APP -->
 			<u-sticky bgColor="#fff" offsetTop="-44">
-				<view style="position: relative;top: 0;padding: 30rpx 30rpx 0 30rpx;">
+				<view style="position: relative;top: 0;padding: 30rpx 30rpx 0 30rpx;" @touchmove.stop>
 					<u-row>
 						<view @click="showOrderList = !showOrderList" style="display: flex; align-items: center;">
 							<text style="margin-right: 10rpx;">{{orderName}}</text>
@@ -82,9 +83,10 @@
 								style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.5);">
 							</view>
 							<view
-								style="font-size: 30rpx;color:#a899e6;display: flex;flex-direction: column;position: absolute; top: 100rpx; left: 30rpx; background-color: #fff; padding: 10rpx; border-radius: 20rpx; box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);">
+								style="font-size: 30rpx;color:#85a3ff;display: flex;flex-direction: column;position: absolute; top: 100rpx; left: 30rpx; background-color: #fff; padding: 10rpx; border-radius: 20rpx; box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);">
 								<block v-for="(item,index) in orderList" :key="index">
-									<text @click.stop="orderTap(item.name)" style="padding: 15rpx;">{{item.name}}</text>
+									<text @click.stop="orderTap(item.name);$refs.comments.reload()"
+										style="padding: 15rpx;">{{item.name}}</text>
 								</block>
 							</view>
 						</view>
@@ -105,7 +107,7 @@
 			<template #bottom>
 				<u-row customStyle="padding-top:10rpx;padding:20rpx" justify="space-between">
 					<u-col span="6">
-						<u-row customStyle="padding:14rpx 14rpx;border-radius: 50rpx;background:#85a3ff14"
+						<u-row customStyle="padding:14rpx 14rpx;border-radius: 50rpx;background:#85a3ff1e"
 							class="u-info" @click="showComment = true">
 							<u-icon name="edit-pen" size="20"></u-icon>
 							<text style="margin-left:10rpx;font-size: 28rpx;">说点什么</text>
@@ -120,14 +122,14 @@
 							</view>
 							<view style="display: flex; flex-direction: column;align-items: center;"
 								@click="$u.throttle(btnTap('mark'),1000,true)">
-								<u-icon :color="article && article.isMark?'#a899e6':''" name="star" size="22"
+								<u-icon :color="article && article.isMark?'#85a3ff':''" name="star" size="22"
 									:class="{'animate__animated animate__pulse':article && article.isMark}"></u-icon>
 								<u-text text="收藏" size="12"></u-text>
 							</view>
 
 							<view style="display: flex; flex-direction: column;align-items: center;"
 								@click="$u.throttle(btnTap('likes'),1000,true)">
-								<u-icon :color="article && article.isLike?'#a899e6':''" name="thumb-up" size="22"
+								<u-icon :color="article && article.isLike?'#85a3ff':''" name="thumb-up" size="22"
 									:class="{'animate__animated animate__bounceIn':article && article.isLike}"></u-icon>
 								<u-text text="点赞" size="12"></u-text>
 							</view>
@@ -143,29 +145,30 @@
 			:customStyle="{transform: `translateY(${-keyboardHeight+'px'})`,transition:'transform 0.3s ease-in-out',padding:30+'rpx'}">
 			<editor id="editor" :adjust-position="false" :show-img-size="false" :show-img-resize="false"
 				:show-img-toolbar="false" @ready="onEditorReady" placeholder="说点什么"
-				style="background: #85a3ff14;height: auto;min-height: 60px;max-height: 100px;border-radius: 20rpx;padding: 8rpx 16rpx;">
+				style="background: #85a3ff1e;height: auto;min-height: 60px;max-height: 100px;border-radius: 20rpx;padding: 8rpx 16rpx;">
 			</editor>
 			<!-- <u--textarea :adjustPosition="false" :cursorSpacing="40" type="textarea" v-model="commentText"
 				placeholder="灵感迸发" border="none"
-				customStyle="background:#85a3ff14;padding:4rpx 10rpx;border-radius:20rpx"></u--textarea> -->
+				customStyle="background:#85a3ff1e;padding:4rpx 10rpx;border-radius:20rpx"></u--textarea> -->
 			<u-row customStyle="margin-top:20rpx" justify="space-between">
 				<u-col span="2">
 					<u-row justify="space-between">
 						<block v-for="(item,index) in cBtn" :key="index">
-							<u-icon :name="item.icon" size="24" :color="showComemntBtn == item.name?'#a899e6':''"
+							<u-icon :name="item.icon" size="24" :color="showComemntBtn == item.name?'#85a3ff':''"
 								@click="cBtnTap(item.name)"></u-icon>
 						</block>
 					</u-row>
 				</u-col>
 				<view>
-					<u-button shape="circle" color="#a899e6" customStyle="padding:4rpx,6rpx;height:50rpx;width:120rpx"
-						text="发送" @click="reply"></u-button>
+					<u-button shape="circle" color="#85a3ff" customStyle="padding:4rpx,6rpx;height:50rpx;width:120rpx"
+						text="发送" @click="$u.throttle(reply(),2000,true) "></u-button>
 				</view>
 			</u-row>
 			<uv-scroll-list :indicator="false" v-if="images.length" style="margin-top: 20rpx;">
 				<view v-for="(item, index) in images" :key="index"
-					style="position: relative; display: inline-block;height: 100rpx;width: 100rpx;">
-					<image :src="item" mode="aspectFill" style="height: 100rpx; width: 100rpx; border-radius: 20rpx;">
+					style="position: relative; display: inline-block;height: 100rpx;width: 100rpx;margin-right: 10rpx;">
+					<image :src="item" mode="aspectFill" style="height: 100rpx; width: 100rpx; border-radius: 20rpx;"
+						@click="preview(images,index)">
 					</image>
 					<u-icon name="close-circle" style="position: absolute; top: 0; right: 0;"
 						@click="images.splice(index, 1)">
@@ -186,7 +189,7 @@
 						</swiper-item>
 					</swiper>
 				</block>
-				<u-tabs :list="emojiData" :current="emojiIndex" lineHeight="3" lineColor="#a899e6"
+				<u-tabs :list="emojiData" :current="emojiIndex" lineHeight="3" lineColor="#85a3ff"
 					itemStyle="height: 24px;"
 					:activeStyle="{color: '#303133',fontWeight: 'bold',transform: 'scale(1.05)'}"
 					:inactiveStyle="{color: '#606266',transform: 'scale(1)'}" @change="emojiIndex = $event.index"
@@ -206,14 +209,14 @@
 					<block v-for="(item,index) in rewardList" :key="index">
 						<u-button size="normal" customStyle="width:100rpx;height:60rpx;margin:0"
 							:plain="selectReward!=item" @click="selectReward = item" :text="item"
-							color="#a899e6"></u-button>
+							color="#85a3ff"></u-button>
 					</block>
 				</u-row>
-				<view style="margin-top: 20rpx;border-bottom: 0.5px solid #a899e6;">
+				<view style="margin-top: 20rpx;border-bottom: 0.5px solid #85a3ff;">
 					<u-input type="number" border="none" v-model="reward" placeholder="自定义投喂数量"></u-input>
 				</view>
 				<view style="margin-top: 40rpx;">
-					<u-button color="#a899e6" shape="circle" customStyle="width:120rpx;height:60rpx"
+					<u-button color="#85a3ff" shape="circle" customStyle="width:120rpx;height:60rpx"
 						@click="btnTap('reward',reward?reward:selectReward)">投喂</u-button>
 				</view>
 			</view>
@@ -221,17 +224,15 @@
 		</uv-modal>
 
 		<!-- 分享 -->
-		<u-popup mode="bottom" round="10" :show="showMore" @close="showMore =false">
-			<view style="position: absolute;top: 0;padding: 30rpx;">
-				<u-icon name="close" size="20" color="#999" @click="showMore = false"></u-icon>
-			</view>
+		<u-popup mode="bottom" round="10" :show="showMore" @close="showMore =false" :closeable="true">
+
 			<view style="padding: 30rpx;">
 				<view style="text-align: center;color: #999;">
 					<text>分享至</text>
 				</view>
 				<view style="margin-top: 50rpx;">
-					<u-row justify="space-between"
-						customStyle="border-bottom:1rpx solid #85a3ff0a;padding-bottom:30rpx">
+					<u-row customStyle="border-bottom:1rpx solid #85a3ff0a;padding-bottom:30rpx"
+						justify="space-between">
 						<block v-for="(item,index) in share" :key="index">
 							<u-row align="center" customStyle="flex-direction:column">
 								<view style="padding: 20rpx;border-radius: 100rpx;" :style="{background:item.color}">
@@ -242,29 +243,32 @@
 						</block>
 					</u-row>
 					<view style="display: flex;flex-direction: column;margin-top: 50rpx;">
-						<u-row customStyle="margin-bottom:20rpx">
+						<u-row customStyle="margin:20rpx 0">
 							<u-icon name="thumb-down" size="24"></u-icon>
 							<text style="margin-left:10rpx">我不喜欢这类内容</text>
 						</u-row>
-						<u-row customStyle="margin-bottom:20rpx">
+						<u-row customStyle="margin:20rpx 0">
 							<u-icon name="warning" size="24"></u-icon>
 							<text style="margin-left:10rpx">举报</text>
 						</u-row>
-						<u-row customStyle="margin-bottom:20rpx">
+						<u-row customStyle="margin:20rpx 0">
 							<u-icon name="close-circle" size="24"></u-icon>
 							<text style="margin-left:10rpx">屏蔽用户</text>
 						</u-row>
-						<u-row customStyle="margin-bottom:20rpx">
+						<u-row customStyle="margin:20rpx 0">
 							<u-icon name="share" size="24"></u-icon>
 							<text style="margin-left:10rpx">复制链接</text>
 						</u-row>
-						<u-row customStyle="margin-bottom:20rpx">
+						<u-row customStyle="margin:20rpx 0">
 							<u-icon name="more-dot-fill" size="24"></u-icon>
 							<text style="margin-left:10rpx">通过系统分享</text>
 						</u-row>
-						<text
-							v-if="article&& article.authorId == $store.state.userInfo.uid|| $store.state.userInfo.groupKey =='administrator'"
-							@click="goEdit()">编辑</text>
+						<view style="margin: 20rpx 0;">
+							<text
+								v-if="article&& article.authorId == $store.state.userInfo.uid|| $store.state.userInfo.groupKey =='administrator'"
+								@click="goEdit()">编辑</text>
+						</view>
+
 					</view>
 				</view>
 			</view>
@@ -274,7 +278,7 @@
 			@close="showLoading=false;uploadErr.status = false;uploadErr.msg=null;"
 			:closeOnClickOverlay="uploadErr.status" :showConfirmButton="false"
 			:title="uploadErr.status?'上传错误':'上传中...'">
-			<u-line-progress :percentage="percentage" activeColor="#a899e6" :showText="false"
+			<u-line-progress :percentage="percentage" activeColor="#85a3ff" :showText="false"
 				v-if="!uploadErr.status"></u-line-progress>
 			<text v-if="uploadErr.status">错误信息：{{uploadErr.msg}}</text>
 			<view slot="confirmButton"></view>
@@ -332,17 +336,22 @@
 				showSub: false,
 				orderList: [{
 						name: '全部评论',
+						order: ''
 					}, {
-						name: '点赞最多'
+						name: '点赞最多',
+						order: 'likes'
 					},
 					{
-						name: '最新'
+						name: '最新',
+						order: 'created desc'
 					},
 					{
-						name: '最早'
+						name: '最早',
+						order: 'created asc'
 					},
 					{
-						name: '只看楼主'
+						name: '只看楼主',
+						order: 'author'
 					}
 				],
 				cBtn: [{
@@ -358,25 +367,16 @@
 						color: 'green'
 					},
 					{
-						name: '微信',
-						icon: 'weixin-fill',
+						name: '朋友圈',
+						icon: 'moments',
 						color: 'green'
 					},
 					{
-						name: '微信',
-						icon: 'weixin-fill',
-						color: 'green'
+						name: 'QQ',
+						icon: 'qq-fill',
+						color: 'blue'
 					},
-					{
-						name: '微信',
-						icon: 'weixin-fill',
-						color: 'green'
-					},
-					{
-						name: '微信',
-						icon: 'weixin-fill',
-						color: 'green'
-					}
+
 				],
 				manage: [{
 						name: '举报',
@@ -406,11 +406,10 @@
 				this.showComment = false;
 				this.showSub = false;
 				this.showMore = false;
-				next(false)
 				this.$Router.$lockStatus = false
-			} else {
-				next();
-			}
+				return
+			} 
+			next();
 
 		},
 		created() {
@@ -435,7 +434,7 @@
 			getData(id) {
 				this.$http.get('/typechoContents/contentsInfo', {
 					params: {
-						key: id,
+						key: id ? id : this.cid,
 						isMd: 1,
 						uid: this.$store.state.hasLogin ? this.$store.state.userInfo.uid : '',
 						token: uni.getStorageSync('token')
@@ -444,7 +443,7 @@
 					console.log(res)
 					if (res.statusCode == 200) {
 						this.article = res.data
-						this.article.text = this.replaceEmoji(res.data.text)
+						this.article.text = res.data && this.replaceEmoji(res.data.text)
 					}
 				})
 			},
@@ -504,22 +503,35 @@
 					})
 				});
 			},
+			onRefresh() {
+				this.getData()
+			},
 			getComments(page, limit) {
+				let order = this.orderList.find(order => order.name == this.orderName)
+				let params = {
+					page,
+					limit,
+					searchParams: JSON.stringify({
+						type: 'comment',
+						cid: this.cid,
+						parent: 0,
+						authorId: order.name == '只看楼主' ? this.article.authorId : null
+					}),
+					order: order.order
+				}
+
+				if (order.name == '只看楼主') {
+					params.order = null
+				}
 				this.$http.get('/typechoComments/commentsList', {
-					params: {
-						page,
-						limit,
-						searchParams: JSON.stringify({
-							type: 'comment',
-							cid: this.cid,
-							parent: 0,
-						})
-					}
+					params
 				}).then(res => {
 					console.log(res)
 					if (res.statusCode == 200) {
 						this.$refs.comments.complete(res.data.data)
 					}
+				}).catch(err => {
+					this.$refs.comments.complete(false)
 				})
 			},
 			reply() {
@@ -529,7 +541,8 @@
 							function(match, alt) {
 								return `[${alt}]`;
 							});
-						if (this.commentText.length < 10 || res.text.length < 1) {
+						console.log(res.text, this.commentText.length)
+						if (res.text.length < 2) {
 							uni.$u.toast('再多说点吧~')
 							return;
 						};
@@ -550,6 +563,7 @@
 								uni.$u.toast('已发送~')
 								this.commentText = null
 								this.showComment = false
+								this.images = []
 								this.$refs.comments.reload()
 							} else {
 								uni.$u.toast(res.data.msg)
@@ -564,19 +578,21 @@
 
 			},
 			replaceEmoji(html) {
-				return html.replace(
-					/<img[^>]*?alt="src=([^"]+)\|poster=([^"]+)\|type=video"[^>]*?>/g, (match, src, poster) => {
-						return `<div style="border-radius:10px"><video src="${src}" poster="${poster}" muted width="100%" style="border-radius:10px" /></div>`
-					}).replace(/_|#([^|]+)_(([^|]+))|/g, (match, name, key) => {
-					const emoji = this.$emoji.data.find(e => e.name === name)
-					if (emoji) {
-						const src = `${emoji.base}${emoji.slug}_${emoji.list[key]}.${emoji.format}`
-						return `<img src="${src}" style="width:100rpx;height:100rpx">`
-					}
-					// 如果没有找到,直接返回空字符串
-					// 即删除整个匹配文本
-					return ''
-				}).replace(/\|</g, '<').replace(/>\|/g, '>')
+				if (html) {
+					return html.replace(
+						/<img[^>]*?alt="src=([^"]+)\|poster=([^"]+)\|type=video"[^>]*?>/g, (match, src, poster) => {
+							return `<div style="border-radius:10px"><video src="${src}" poster="${poster}" muted width="100%" style="border-radius:10px" /></div>`
+						}).replace(/_|#([^|]+)_(([^|]+))|/g, (match, name, key) => {
+						const emoji = this.$emoji.data.find(e => e.name === name)
+						if (emoji) {
+							const src = `${emoji.base}${emoji.slug}_${emoji.list[key]}.${emoji.format}`
+							return `<img src="${src}" style="width:100rpx;height:100rpx">`
+						}
+						// 如果没有找到,直接返回空字符串
+						// 即删除整个匹配文本
+						return ''
+					}).replace(/\|</g, '<').replace(/>\|/g, '>')
+				}
 
 			},
 			btnTap(type, num) {
@@ -727,16 +743,24 @@
 
 			goEdit() {
 				this.showMore = false
-				setTimeout(()=>{
-					this.$Router.push({
-						path: '/publish/article/article',
-						query: {
-							update: 1,
-							id: this.article.cid
-						}
-					})
-				},500)
-				
+				if (this.article.type == 'post') {
+					setTimeout(() => {
+						this.$Router.push({
+							path: '/publish/article/article',
+							query: {
+								update: 1,
+								id: this.article.cid
+							}
+						})
+					}, 500)
+				}
+
+			},
+			preview(urls, current) {
+				uni.previewImage({
+					urls,
+					current
+				})
 			}
 		}
 	}
