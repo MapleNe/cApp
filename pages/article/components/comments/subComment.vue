@@ -1,12 +1,19 @@
 <template>
 	<view>
-		<z-paging ref="paging" @query="getComments" v-model="comments" :refresher-enabled="false" :auto-scroll-to-top-when-reload="false" :auto-clean-list-when-reload="false">
+		<z-paging ref="paging" @query="getComments" v-model="comments" :refresher-enabled="false"
+			:auto-scroll-to-top-when-reload="false" :auto-clean-list-when-reload="false" cache-mode="always" use-cache
+			:cache-key="`article_mid_sub-${data.coid}`">
 			<template #top>
-				<u-navbar autoBack placeholder></u-navbar>
+				<u-navbar autoBack placeholder style="z-index: 10;">
+					<view slot="left">
+						<i class="ess icon-left_line" style="font-size: 60rpx;"></i>
+					</view>
+				</u-navbar>
 			</template>
 
-			<u-row align="top" customStyle="margin:30rpx;border-bottom: 1rpx #f7f7f7 solid;">
-
+			<u-row align="top" customStyle="
+											margin:30rpx;
+											border-bottom: 1rpx #f7f7f7 solid;">
 				<view style="position: relative;">
 					<u-avatar :src="data.avatar" size="30" customStyle="border:4rpx solid #85a3ff32"
 						@click="goProfile(data.authorId)"></u-avatar>
@@ -14,13 +21,29 @@
 						:src="data.opt&&data.opt.headStatus&&data.opt.head_picture">
 					</image>
 				</view>
-				<view style="display: flex;flex:1; flex-direction: column;margin-left: 20rpx;padding-bottom: 30rpx;">
+				<view style="
+				display: flex;
+				flex:1; 
+				flex-direction: column;
+				margin-left: 20rpx;
+				padding-bottom: 30rpx;">
 					<u-row>
-						<text
-							:style="{color:data.isvip?'#85a3ff':'',fontSize:30+'rpx',fontWeight:600}">{{data.author}}</text>
-						<text
-							style="font-size: 18rpx;border:#98e6a8 solid 2rpx;color: #98e6a8;padding: 0 16rpx;border-radius: 50rpx;margin-left:20rpx"
-							v-if="data.authorId == data.ownerId">作者</text>
+						<u-row>
+							<text
+								:style="{color:data.isvip?'#85a3ff':'',fontSize:30+'rpx',fontWeight:600}">{{data.author}}</text>
+							<i v-if="data.level" :class="`level icon-lv-${data.level}`"
+								style="font-size: 50rpx; margin-left: 10rpx;"
+								:style="{ color: data.level > 8 ? $level[Math.floor(data.level/2)-1] : $level[data.level-1] }">
+							</i>
+						</u-row>
+
+						<text style="
+							font-size: 18rpx;
+							border:#98e6a8 solid 2rpx;
+							color: #98e6a8;
+							padding: 0 16rpx;
+							border-radius: 50rpx;
+							margin-left:20rpx" v-if="data.authorId == data.ownerId">作者</text>
 					</u-row>
 					<view style="margin-top:10rpx;word-break: break-word;">
 						<uv-parse :previewImg="false" selectable :showImgMenu="false"
@@ -29,17 +52,84 @@
 					<u-swiper :list="data.images" v-if="data.images && data.images.length" :autoplay="false" indicator
 						height="150" indicator-style="left" radius="10"
 						@click="previewImg(data.images,$event)"></u-swiper>
+					<u-gap height="6"></u-gap>
 					<u-row justify="space-between" customStyle="font-size: 24rpx;color: #aaa;">
-						<text>{{$u.timeFormat(data.created,'mm-dd')}}</text>
-						<u-row customStyle="flex-basis:25%" justify="space-between">
-							<u-icon name="chat" color="#aaa" size="20" labelColor="#aaa" label-size="12"></u-icon>
-							<u-icon name="thumb-up" color="#aaa" size="20" labelColor="#aaa" :label="1"
-								label-size="12"></u-icon>
+						<text>{{$u.timeFrom(data.created,'mm-dd')}}</text>
+						<u-row customStyle="flex-basis:30%" justify="space-between">
+							<u-row @click="commentCheck(false,data.coid,data.author)">
+								<i class="ess icon-chat_4_line" style="font-size: 40rpx;"></i>
+								<text style="font-size: 28rpx;margin-left: 10rpx;">回复</text>
+							</u-row>
+							<u-row>
+								<i class="ess icon-thumb_up_2_line" style="font-size: 40rpx;"></i>
+								<text style="font-size: 28rpx;margin-left: 10rpx;"></text>
+							</u-row>
 						</u-row>
 					</u-row>
 				</view>
 			</u-row>
 
+			<!-- #ifdef APP -->
+			<u-sticky bgColor="#fff">
+				<view style="position: relative;top: 0;padding: 30rpx 30rpx 0 30rpx;" @touchmove.stop>
+					<u-row>
+						<view @click="showOrderList = !showOrderList" style="display: flex; align-items: center;">
+							<text
+								style="margin-right: 10rpx;font-size:30rpx;color: #666;font-weight: 600;">{{orderName}}</text>
+							<i class="ess" style="font-size: 50rpx;"
+								:class="showOrderList?'icon-up_small_fill':'icon-down_small_fill'"></i>
+						</view>
+					</u-row>
+					<u-transition :show="showOrderList"
+						style="position: absolute; top: -10rpx; left: 0; width: 100%;z-index: 1001;">
+						<view>
+							<!-- 半透明遮罩 -->
+							<view @click.stop="showOrderList = false"
+								style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.5);">
+							</view>
+							<view
+								style="font-size: 30rpx;color:#85a3ff;display: flex;flex-direction: column;position: absolute; top: 100rpx; left: 30rpx; background-color: #fff; padding: 10rpx; border-radius: 20rpx; box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);">
+								<block v-for="(item,index) in orderList" :key="index">
+									<text @click.stop="orderTap(item.name);$refs.paging.reload()"
+										style="padding: 15rpx;">{{item.name}}</text>
+								</block>
+							</view>
+						</view>
+					</u-transition>
+				</view>
+			</u-sticky>
+			<!-- #endif -->
+			<!-- #ifndef APP -->
+			<u-sticky bgColor="#fff" offsetTop="-44">
+				<view style="position: relative;top: 0;padding: 30rpx 30rpx 0 30rpx;" @touchmove.stop>
+					<u-row>
+						<view @click="showOrderList = !showOrderList" style="display: flex; align-items: center;">
+							<text
+								style="margin-right: 10rpx;font-size:30rpx;color: #666;font-weight: 600;">{{orderName}}</text>
+							<i class="ess" style="font-size: 50rpx;"
+								:class="showOrderList?'icon-up_small_fill':'icon-down_small_fill'"></i>
+						</view>
+					</u-row>
+					<u-transition :show="showOrderList"
+						style="position: absolute; top: -10rpx; left: 0; width: 100%;z-index: 1001;">
+						<view>
+							<!-- 半透明遮罩 -->
+							<view @click.stop="showOrderList = false"
+								style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.5);">
+							</view>
+							<view
+								style="font-size: 30rpx;color:#85a3ff;display: flex;flex-direction: column;position: absolute; top: 100rpx; left: 30rpx; background-color: #fff; padding: 10rpx; border-radius: 20rpx; box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);">
+								<block v-for="(item,index) in orderList" :key="index">
+									<text @click.stop="orderTap(item.name);$refs.paging.reload()"
+										style="padding: 15rpx;">{{item.name}}</text>
+								</block>
+							</view>
+						</view>
+					</u-transition>
+				</view>
+
+			</u-sticky>
+			<!-- #endif -->
 			<!-- 子评论开始 -->
 			<view>
 				<block v-for="(item,index) in comments" :key="index">
@@ -49,10 +139,21 @@
 								<u-avatar :src="item.avatar" size="24" customStyle="border:4rpx solid #85a3ff32"
 									@click="goProfile(item.authorId)"></u-avatar>
 
-								<view style="display: flex;flex:1; flex-direction: column;margin-left: 20rpx;">
+								<view style="
+								display: flex;
+								flex:1; 
+								flex-direction: column;
+								margin-left: 20rpx;">
 									<u-row>
-										<text
-											:style="{color:item.isvip?'#85a3ff':'',fontSize:30+'rpx',fontWeight:600}">{{item.author}}</text>
+										<u-row>
+											<text
+												:style="{color:item.isvip?'#85a3ff':'',fontSize:30+'rpx',fontWeight:600}">{{item.author}}</text>
+											<i v-if="item.level" :class="`level icon-lv-${item.level}`"
+												style="font-size: 50rpx; margin-left: 10rpx;"
+												:style="{ color: item.level > 8 ? $level[Math.floor(item.level/2)-1] : $level[item.level-1] }">
+											</i>
+										</u-row>
+
 										<text
 											style="font-size: 18rpx;border:#98e6a8 solid 2rpx;color: #98e6a8;padding: 0 16rpx;border-radius: 50rpx;margin-left:20rpx"
 											v-if="item.authorId == data.ownerId">作者</text>
@@ -61,7 +162,20 @@
 										@click="commentCheck(true,item.coid,item.author)">
 
 										<uv-parse :previewImg="false" selectable :showImgMenu="false"
-											:content="item.parent != data.coid&&item.authorId!=item.parentComments.authorId?formatEmoji(formatText(item)):formatEmoji(item.text)"></uv-parse>
+											:content="formatEmoji(item.text)"></uv-parse>
+									</view>
+									<view v-if="item.parent != data.coid&&item.authorId!=item.parentComments.authorId"
+										class="u-line-1" style="
+										padding-left:20rpx;
+										border-left: 6rpx #85a3ff1e solid;
+										margin-top: 20rpx;
+										font-size: 28rpx;
+										color: #999;
+										display: flex !important;">
+										<text
+											style="color:#a899e6;flex-shrink: 0;padding-right: 10rpx;">@{{item.parentComments.author}}</text>
+										<uv-parse :previewImg="false" selectable :showImgMenu="false"
+											:content="item.parentComments.text" class="u-line-1"></uv-parse>
 									</view>
 									<u-swiper :list="item.images" v-if="item.images && item.images.length"
 										:autoplay="false" indicator height="150" indicator-style="left" radius="10"
@@ -69,12 +183,16 @@
 									<u-gap height="6"></u-gap>
 									<view>
 										<u-row justify="space-between" customStyle="font-size: 24rpx;color: #aaa;">
-											<text>{{$u.timeFormat(item.created,'mm-dd')}}</text>
+											<text>{{$u.timeFrom(item.created,'mm-dd')}}</text>
 											<u-row customStyle="flex-basis:30%" justify="space-between">
-												<u-icon name="chat" color="#aaa" label="回复" size="20" labelColor="#aaa"
-													label-size="12"></u-icon>
-												<u-icon name="thumb-up" color="#aaa" :label="1" size="20"
-													labelColor="#aaa" label-size="12"></u-icon>
+												<u-row @click="commentCheck(true,item.coid,item.author)">
+													<i class="ess icon-chat_4_line" style="font-size: 40rpx;"></i>
+													<text style="font-size: 28rpx;margin-left: 10rpx;">回复</text>
+												</u-row>
+												<u-row>
+													<i class="ess icon-thumb_up_2_line" style="font-size: 40rpx;"></i>
+													<text style="font-size: 28rpx;margin-left: 10rpx;"></text>
+												</u-row>
 
 											</u-row>
 										</u-row>
@@ -93,11 +211,12 @@
 						<text style="margin-left:10rpx;font-size: 28rpx;">回复{{data.author}}</text>
 					</u-row>
 				</u-row>
-				<!-- 回复评论弹窗 -->
+
 
 			</template>
 
 		</z-paging>
+		<!-- 回复评论弹窗 -->
 		<u-popup :show="showComment" @close="showComment = false" round="20"
 			:customStyle="{transform: `translateY(${-keyboardHeight+'px'})`,transition:'transform 0.3s ease-in-out',padding:30+'rpx'}">
 			<editor id="editor" :adjust-position="false" :show-img-size="false" :show-img-resize="false"
@@ -166,6 +285,7 @@
 	export default {
 		data() {
 			return {
+				isReply: false,
 				data: null,
 				percentage: 30,
 				comments: [],
@@ -188,6 +308,28 @@
 					name: '图片',
 					icon: 'photo',
 				}],
+				orderList: [{
+						name: '全部评论',
+						order: ''
+					}, {
+						name: '点赞最多',
+						order: 'likes'
+					},
+					{
+						name: '最新',
+						order: 'created desc'
+					},
+					{
+						name: '最早',
+						order: 'created asc'
+					},
+					{
+						name: '只看楼主',
+						order: 'author'
+					}
+				],
+				orderName: '最新',
+				showOrderList: false,
 				replyWho: '',
 				loading: true,
 			}
@@ -223,17 +365,24 @@
 		},
 		methods: {
 			getComments(page, limit) {
-				this.$http.get('/typechoComments/commentsList', {
-					params: {
-						page,
-						limit,
-						searchParams: JSON.stringify({
-							cid: this.data.cid,
-							type: 'comment',
-							allparent: this.data.coid,
-						}),
-						order: 'created asc'
-					}
+				let order = this.orderList.find(order => order.name == this.orderName)
+				let params = {
+					page,
+					limit,
+					searchParams: JSON.stringify({
+						cid: this.data.cid,
+						type: 'comment',
+						allparent: this.data.coid,
+						authorId: order.name == '只看楼主' ? this.data.ownerId : null
+					}),
+					order: order.order
+				}
+
+				if (order.name == '只看楼主') {
+					params.order = null
+				}
+				this.$http.get('/comments/commentsList', {
+					params
 				}).then(res => {
 					console.log(res)
 					if (res.data.code) {
@@ -244,6 +393,10 @@
 					}, 1000)
 				})
 			},
+			orderTap(item) {
+				this.orderName = item
+				this.showOrderList = false
+			},
 			commentCheck(status, pid, reply) {
 				this.pid = pid
 				this.replyWho = reply
@@ -251,13 +404,14 @@
 				this.showComment = true
 			},
 			reply() {
+				if (this.isReply) return;
 				this.editorCtx.getContents({
 					success: (res) => {
 						this.commentText = res.html.replace(/<img\s+[^>]*alt="([^"]+)_emoji"[^>]*>/g,
 							function(match, alt) {
 								return `[${alt}]`;
 							});
-						if (res.text.length<2) {
+						if (res.text.length < 2) {
 							uni.$u.toast('再多说点吧~')
 							return;
 						};
@@ -269,8 +423,8 @@
 							text: this.commentText,
 							images: this.images
 						})
-
-						this.$http.post('/typechoComments/commentsAdd', {
+						this.isReply = true
+						this.$http.post('/comments/commentsAdd', {
 							params
 						}).then(res => {
 							if (res.data.code) {
@@ -282,22 +436,15 @@
 							} else {
 								uni.$u.toast(res.data.msg)
 							}
+							this.isReply = false
+						}).catch(err => {
+							this.isReply = false
 						})
 					}
 
 				})
 			},
-			formatText(item) {
-				let text = `
-			    <div style="word-break:break-all">
-			      回复&nbsp;
-			      <span style="color:#85a3ff" v-on:click="goProfile(item)">
-			        ${item.parentComments.author}：</span> 
-					${item.text}
-			    </div>
-			  `;
-				return text;
-			},
+
 			goProfile(id) {
 				console.log('点击了')
 				this.$Router.push({

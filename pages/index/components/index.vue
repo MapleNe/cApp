@@ -7,36 +7,43 @@
 				<view slot="left"></view>
 				<view slot="center" style="flex: 1;margin: 0 20rpx;">
 					<u-row>
-						<u-icon name="gift" size="24" customStyle="background:#f7f7f7;border-radius:50rpx;padding:10rpx"
-							@click="checkUp()"></u-icon>
-						<view @click="goSearch()"
-							style="display: flex;justify-content: space-between;flex:1;background: #f7f7f7;padding:6rpx 20rpx;border-radius: 50rpx;margin-left: 20rpx;">
-							<text style="color: #999;">搜索</text>
-							<u-icon name="search" size="20"></u-icon>
-						</view>
-						<u-avatar :src="userInfo.avatar" size="30" customStyle="margin-left:20rpx"
+						<u-avatar :src="userInfo.avatar" size="30" customStyle="margin-right:20rpx"
 							@click="avatarTap()"></u-avatar>
+						<view @click="goSearch()" style="display: flex;
+							justify-content: space-between;
+							flex:1;
+							border: #85a3ffc3 solid 1rpx;
+							padding:12rpx 20rpx;border-radius: 50rpx;margin-left: 20rpx;">
+							<text style="color: #aaa;font-size: 28rpx;">搜索</text>
+							<i class="ess icon-search_3_line" style="font-size: 40rpx;color: #aaa;"></i>
+						</view>
+						<view style="position: relative;top: 0;">
+							<i class="ess icon-notification_line" style="margin-left:20rpx;font-size: 40rpx;"
+								@tap.stop="goNotice()"></i>
+							<i class="ess icon-round_fill" v-if="$store.state.noticeNum.total"
+								style="position: absolute;top:0;right: 0;color: red;font-size: 18rpx;"></i>
+
+						</view>
 					</u-row>
 				</view>
 			</u-navbar>
 		</template>
 		<!-- 模拟首屏开始 -->
-		<u-tabs :list="topTabbar" lineWidth="20" lineHeight="7" @change="changeTab" :current="topTabIndex"
-			:lineColor="`url(${lineBg}) 100% 100%`"
-			:activeStyle="{color: '#85a3ff',fontWeight: 'bold',transform: 'scale(1.05)'}"
-			:inactiveStyle="{color: '#606266',transform: 'scale(1)'}"
+		<u-tabs :list="topTabbar" lineWidth="20" lineHeight="3" @change="changeTab" :current="topTabIndex"
+			lineColor="#85a3ff" :activeStyle="{color: '#85a3ff',fontWeight: 'bold',transform: 'scale(1.05)'}"
+			:inactiveStyle="{color: '#000',transform: 'scale(1)'}"
 			itemStyle="padding-left: 30rpx; padding-right: 30rpx; height: 68rpx;">
 			<view slot="right" style="padding-left: 8rpx;margin-right: 20rpx;" @click="goCategoryList()">
-				<u-icon name="list" size="20" bold></u-icon>
+				<i class="ess icon-menu_line" style="font-size: 40rpx;"></i>
 			</view>
 		</u-tabs>
 		<swiper style="height: 100%;" :current="topTabIndex" @animationfinish="animationfinish">
 			<swiper-item v-for="(page,pageIndex) in topTabbar" :key="pageIndex">
-				<articleIndex :swiper="pageIndex" :tabbar="topTabIndex" :mid="page.mid" v-if="!page.isrecommend"
+				<articleIndex :swiper="pageIndex" :tabbar="topTabIndex" :mid="page.mid" v-if="!page.iswaterfall"
 					:isSwiper="!pageIndex" @edit="$emit('edit',$event)">
 				</articleIndex>
-				<water-fall-index v-else :swiper="pageIndex" :tabbar="topTabIndex"
-					style="margin-bottom: 60rpx;background: #f7f7f7;"></water-fall-index>
+				<water-fall-index v-else :swiper="pageIndex" :mid="page.mid" :tabbar="topTabIndex"
+					style="margin-bottom: 180rpx;background: #f7f7f7;"></water-fall-index>
 			</swiper-item>
 		</swiper>
 	</z-paging-swiper>
@@ -121,12 +128,20 @@
 			...mapState(['userInfo'])
 		},
 		onReady() {},
+		beforeRouteLeave(to, from, next) {
+			if (this.showPublish || this.showMoreMenu) {
+				this.showMoreMenu = false
+				this.showPublish = false
+				return
+			}
+			next()
+		},
 		methods: {
 			initData() {
 				this.getCategory()
 			},
 			getCategory() {
-				this.$http.get('/typechoMetas/metasList', {
+				this.$http.get('/category/list', {
 					params: {
 						page: 1,
 						limit: 8,
@@ -177,20 +192,10 @@
 					path: '/pages/common/search/search'
 				})
 			},
-			checkUp() {
-				this.$http.post('/typechoUserlog/addLog', {
-					params: JSON.stringify({
-						type: 'clock'
-					})
-				}).then(res => {
-					console.log(res)
-					if (res.data.code) {
-						uni.$u.toast('签到'+res.data.msg)
-					}else{
-						if(res.data.msg!='你的操作太频繁了'){
-							uni.$u.toast(res.data.msg)
-						}
-					}
+			goNotice() {
+				this.$Router.push({
+					path: '/pages/index/components/notice',
+
 				})
 			}
 		}

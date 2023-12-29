@@ -2,8 +2,8 @@
     "name" : "可萌",
     "appid" : "__UNI__3F0725D",
     "description" : "comoe",
-    "versionName" : "1.0.4",
-    "versionCode" : 5,
+    "versionName" : "1.3.2",
+    "versionCode" : 32,
     "transformPx" : false,
     /* 5+App特有相关 */
     "app-plus" : {
@@ -22,7 +22,8 @@
             "Camera" : {},
             "OAuth" : {},
             "Payment" : {},
-            "VideoPlayer" : {}
+            "VideoPlayer" : {},
+            "Share" : {}
         },
         /* 应用发布信息 */
         "distribute" : {
@@ -53,7 +54,8 @@
             },
             /* ios打包配置 */
             "ios" : {
-                "dSYMs" : false
+                "dSYMs" : false,
+                "UIBackgroundModes" : "audio"
             },
             /* SDK配置 */
             "sdkConfigs" : {
@@ -80,6 +82,16 @@
                 },
                 "push" : {
                     "unipush" : {}
+                },
+                "share" : {
+                    "qq" : {
+                        "appid" : "123123",
+                        "UniversalLinks" : ""
+                    },
+                    "weixin" : {
+                        "appid" : "123123",
+                        "UniversalLinks" : ""
+                    }
                 }
             },
             "icons" : {
@@ -114,7 +126,8 @@
                     }
                 }
             }
-        }
+        },
+        "nvueCompiler" : "uni-app"
     },
     /* 快应用特有相关 */
     "quickapp" : {},

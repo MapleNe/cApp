@@ -1,7 +1,8 @@
 <template>
 	<view>
 		<z-paging ref="paging" refresher-only @onRefresh="onRefresh" @scroll="scroll"
-			:auto-scroll-to-top-when-reload="false" :auto-clean-list-when-reload="false" v-if="$store.state.hasLogin">
+			:auto-scroll-to-top-when-reload="false" :auto-clean-list-when-reload="false"
+			v-if="$store.state.hasLogin&&isMounted" style="margin-bottom: 50rpx;">
 			<template #top>
 				<u-navbar :bgColor="`rgba(255,255,255,${opacity})`">
 					<view slot="left">
@@ -9,20 +10,25 @@
 							<u-icon name="scan" size="26" :color="opacity>0.4? 'black':'white'"></u-icon>
 							<u-row customStyle="margin-left:20rpx" v-show="opacity>=1"
 								@click="$refs.paging.scrollToTop()">
-								<u-avatar :src="userInfo.avatar" size="26"></u-avatar>
-								<text style="margin-left:20rpx">{{userInfo.screenName}}</text>
+								<u-avatar :src="userInfo && userInfo.avatar" size="26"></u-avatar>
+								<text style="margin-left:20rpx">{{userInfo && userInfo.screenName}}</text>
 							</u-row>
 						</u-row>
 					</view>
-					<u-icon name="setting" slot="right" size="26" :color="opacity>0.4? 'black':'white'"
-						@click="showRightMenu = true"></u-icon>
+					<u-row slot="right">
+						<i class="ess icon-calendar_2_line" :style="{color:opacity>0.4? 'black':'white'}"
+							style="font-size: 44rpx;margin-right: 20rpx;" @click="checkUp()"></i>
+						<i class="ess icon-settings_1_line" :style="{color:opacity>0.4? 'black':'white'}"
+							style="font-size: 44rpx;margin-right: 20rpx;" @click="showRightMenu =true"></i>
+					</u-row>
+
 				</u-navbar>
 			</template>
-			<image :src="userInfo.userBg?userInfo.userBg:'/static/login.png'" mode="aspectFill"
+			<image :src="userInfo && userInfo.userBg?userInfo.userBg:'/static/login.png'" mode="aspectFill"
 				style="width: 100%;height: 400rpx;transform: scale(1);" @click="chooseBackImg()"></image>
 			<view class="userPanel">
 				<view style="position: absolute;top: -80rpx;">
-					<u-avatar :src="userInfo.avatar" size="80">
+					<u-avatar :src="userInfo && userInfo.avatar" size="80">
 					</u-avatar>
 					<image class="avatar_head" mode="aspectFill"
 						:src="userInfo && userInfo.opt&&userInfo.opt.head_picture">
@@ -34,15 +40,29 @@
 						<!-- 占位脱离文档流头像 -->
 						<u-gap height="40"></u-gap>
 						<!-- 占位结束 -->
-						<text style="font-weight: 600;font-size: 34rpx;">{{userInfo.screenName}}</text>
-						<u-row customStyle="font-size:28rpx">
-							<u-icon name="heart" color="#85a3ff" customStyle="margin-right:10rpx"></u-icon>
-							<text>通行证ID：{{userInfo.uid}}</text>
+						<u-row>
+							<view style="position: relative;top: 0;">
+								<text
+									style="font-weight: 600;font-size: 34rpx;">{{userInfo && userInfo.screenName}}</text>
+								<uv-line-progress :height="4"
+									:activeColor="userInfo.level > 8 ? $level[Math.floor(userInfo.level/2)-1] : $level[userInfo.level-1]"
+									:percentage="100-((userInfo.nextExp - userInfo.experience) / userInfo.nextExp) * 100"
+									:showText="false" style="position: absolute;bottom: 0;width: 100%;"
+									v-if="userInfo && userInfo.experience && userInfo.nextExp && userInfo.level">
+								</uv-line-progress>
+							</view>
+							<i @click="showLevel = true" v-if="userInfo.level"
+								:class="`level icon-lv-${userInfo.level}`" style="font-size: 50rpx; margin-left: 20rpx;"
+								:style="{ color: userInfo && userInfo.level > 8 ? $level[Math.floor(userInfo.level/2)-1] : $level[userInfo.level-1] }">
+							</i>
 						</u-row>
-
 						<u-row customStyle="font-size:28rpx">
-							<u-icon name="pushpin" customStyle="margin-right:10rpx"></u-icon>
-							<text style="color: #999;">{{userInfo.introduce?userInfo.introduce:'系统默认签名~'}}</text>
+							<i class="ess icon-renwu" style="margin-right: 10rpx;"></i>
+							<text>通行证ID：{{userInfo && userInfo.uid}}</text>
+						</u-row>
+						<u-row customStyle="font-size:28rpx;color: #999;">
+							<i class="ess icon-ziliao" style="margin-right: 10rpx;"></i>
+							<text>{{userInfo && userInfo.introduce?userInfo.introduce:'系统默认签名~'}}</text>
 						</u-row>
 					</view>
 					<view>
@@ -55,19 +75,19 @@
 				</u-row>
 				<u-row justify="space-around" customStyle="margin-top:40rpx">
 					<view class="userMate">
-						<text style="font-size: 34rpx;font-weight: 600;">{{userMeta.contentsNum}}</text>
+						<text style="font-size: 34rpx;font-weight: 600;">{{userMeta && userMeta.contentsNum}}</text>
 						<text>帖子</text>
 					</view>
 					<view class="userMate">
-						<text style="font-size: 34rpx;font-weight: 600;">{{userMeta.followNum}}</text>
+						<text style="font-size: 34rpx;font-weight: 600;">{{userMeta && userMeta.followNum}}</text>
 						<text>关注</text>
 					</view>
 					<view class="userMate">
-						<text style="font-size: 34rpx;font-weight: 600;">{{userMeta.fanNum}}</text>
+						<text style="font-size: 34rpx;font-weight: 600;">{{userMeta && userMeta.fanNum}}</text>
 						<text>粉丝</text>
 					</view>
 					<view class="userMate">
-						<text style="font-size: 34rpx;font-weight: 600;">{{userMeta.commentsNum}}</text>
+						<text style="font-size: 34rpx;font-weight: 600;">{{userMeta && userMeta.commentsNum}}</text>
 						<text>评论</text>
 					</view>
 				</u-row>
@@ -79,7 +99,7 @@
 					</view>
 				</view>
 			</view>
-			<view style="position: relative;top: -60rpx;">
+			<view style="position: relative;top: 0rpx;">
 				<view v-if="$store.state.hasLogin">
 					<!-- #ifndef APP -->
 					<u-sticky bgColor="#fff">
@@ -118,7 +138,7 @@
 			<block v-for="(panel,index) in rightMenuItem" :key="index">
 				<view style="margin:20rpx 20rpx 0 20rpx; background: #fff;border-radius: 20rpx;">
 					<block v-for="(item,subindex) in panel">
-						<u-row customStyle="padding:30rpx" @click="goPage(item.path)">
+						<u-row customStyle="padding:30rpx" @click="goPage(item.path);showRightMenu = false">
 							<u-icon :name="item.icon" size="24"></u-icon>
 							<text style="margin-left:20rpx;font-weight: 600;">{{item.name}}</text>
 						</u-row>
@@ -126,7 +146,8 @@
 				</view>
 			</block>
 			<!-- 管理面板 -->
-			<view style="margin:20rpx 20rpx 0 20rpx; background: #fff;border-radius: 20rpx;" v-if="userInfo && userInfo.groupKey =='administrator'">
+			<view style="margin:20rpx 20rpx 0 20rpx; background: #fff;border-radius: 20rpx;"
+				v-if="userInfo && userInfo.groupKey =='administrator'">
 				<u-row customStyle="padding:30rpx" @click="goPage('manage')">
 					<u-icon name="setting" size="24"></u-icon>
 					<text style="margin-left:20rpx;font-weight: 600;">管理面板</text>
@@ -148,6 +169,35 @@
 			@success="upload($event.url,false); backgroundShow = false" @cancel="backgroundShow = false" is-limit-move
 			is-lock-ratio :width="1280" :height="720" :min-width="1280" :min-height="720" :max-width="1920"
 			:max-height="720" style="z-index: 99999;" />
+
+		<!-- 等级弹窗 -->
+		<u-popup mode="center" :show="showLevel" @close="showLevel = false" round="10">
+			<view style="width: 500rpx;padding: 30rpx;">
+				<view style="text-align: center;">
+					<text>等级详情</text>
+				</view>
+				<view style="display: flex;flex-direction: column;font-size: 28rpx;">
+					<u-row>
+						<text>当前等级：</text>
+						<i @click="showLevel = true" v-if="userInfo.level" :class="`level icon-lv-${userInfo.level}`"
+							style="font-size: 50rpx; margin-left: 20rpx;"
+							:style="{ color: userInfo && userInfo.level > 8 ? $level[Math.floor(userInfo.level/2)-1] : $level[userInfo.level-1] }">
+						</i>
+					</u-row>
+					<view style="display: flex;flex-direction: column;margin-top: 30rpx;">
+						<text
+							style="color: #999;">下一级所需经验{{userInfo && userInfo.experience}}/{{userInfo && userInfo.nextExp}}</text>
+						<u-line-progress :height="4"
+							:activeColor="userInfo.level > 8 ? $level[Math.floor(userInfo.level/2)-1] : $level[userInfo.level-1]"
+							:percentage="100-((userInfo && userInfo.nextExp - userInfo.experience) / userInfo.nextExp) * 100"
+							:showText="false" v-if="userInfo"></u-line-progress>
+					</view>
+				</view>
+				<view style="margin-top: 60rpx;">
+					<u-button color="#85a3ff" shape="circle" @click="showLevel = false">确定</u-button>
+				</view>
+			</view>
+		</u-popup>
 	</view>
 </template>
 
@@ -166,18 +216,31 @@
 			index: {
 				type: [String, Number],
 				default: 0,
+			},
+			current: {
+				type: [String, Number],
+				default: 0
 			}
 		},
 		watch: {
-			index: {
+			current: {
 				handler(e) {
-					if (e == 4) this.isMounted = true;
-					if (this.$store.state.hasLogin) this.onRefresh();
-				}
+					console.log(e, this.index)
+					if (e == this.index && this.$store.state.hasLogin) {
+						this.isMounted = true;
+						this.$nextTick(() => {
+							this.onRefresh();
+						})
+					}
+
+				},
+				immediate: true
 			}
 		},
+
 		data() {
 			return {
+				showLevel: false,
 				showRightMenu: false,
 				isMounted: false,
 				backgroundShow: false,
@@ -195,33 +258,40 @@
 						},
 						{
 							name: '浏览历史',
-							icon: 'heart'
+							icon: 'heart',
+							path: '',
 						}
 					],
 					all: [{
 							name: '我的帖子',
-							icon: 'heart'
+							icon: 'heart',
+							path: '',
 						},
 						{
 							name: '我的订单',
-							icon: 'heart'
+							icon: 'heart',
+							path: 'orderList',
 						},
 						{
 							name: '我的小摊',
-							icon: 'heart'
+							icon: 'heart',
+							path: '',
 						}
 					],
 					blance: [{
 							name: '我的钱包',
-							icon: 'heart'
+							icon: 'heart',
+							path: 'wallet',
 						},
 						{
 							name: '兑换中心',
-							icon: 'heart'
+							icon: 'heart',
+							path: '',
 						},
 						{
 							name: '商城',
-							icon: 'heart'
+							icon: 'heart',
+							path: 'shop',
 						}
 					]
 				},
@@ -244,27 +314,32 @@
 				scrollList: [{
 						name: '创作中心',
 						icon: 'heart',
-						description: '作品收益管理'
+						description: '作品收益管理',
+						path: '',
 					},
 					{
 						name: '我的小摊',
 						icon: 'heart',
-						description: '我所创作的作品'
+						description: '我所创作的作品',
+						path: '',
 					},
 					{
 						name: '商城',
 						icon: 'heart',
-						description: '虚拟商品列表'
+						description: '虚拟商品列表',
+						path: 'shop',
 					},
 					{
 						name: '兑换中心',
 						icon: 'heart',
-						description: '周边积分兑换'
+						description: '周边积分兑换',
+						path: '',
 					},
 					{
 						name: '我的钱包',
 						icon: 'heart',
-						description: '我的钱包'
+						description: '我的钱包',
+						path: '',
 					},
 				],
 				tabsIndex: 0,
@@ -285,7 +360,13 @@
 		computed: {
 			...mapState(['userInfo', 'userMeta'])
 		},
-		created() {},
+		created() {
+			console.log(this.$store.hasLogin)
+			uni.$on('login', data => {
+				this.$store.commit('loginStatus')
+				this.isMounted = true
+			})
+		},
 		onReady() {},
 		methods: {
 			onRefresh() {
@@ -304,9 +385,10 @@
 			},
 			getUserInfo() {
 				if (!uni.getStorageSync('token')) return;
-				this.$http.get('/typechoUsers/userInfo', {
+				this.$http.get('/user/userInfo', {
 					params: {
-						key: this.userInfo.uid
+						key: this.userInfo.uid,
+						token: this.$store.state.hasLogin ? uni.getStorageSync('token') : ''
 					}
 				}).then(res => {
 					console.log(res)
@@ -319,7 +401,7 @@
 				})
 			},
 			getUserMeta() {
-				this.$http.get('/typechoUsers/userData', {
+				this.$http.get('/user/userData', {
 					params: {
 						token: this.$store.state.hasLogin ? uni.getStorageSync('token') : ''
 					}
@@ -370,7 +452,7 @@
 				})
 			},
 			save(url) {
-				this.$http.post('/typechoUsers/userEdit', {
+				this.$http.post('/user/userEdit', {
 					params: JSON.stringify({
 						uid: this.userInfo.uid,
 						name: this.userInfo.name,
@@ -384,6 +466,7 @@
 				})
 			},
 			goPage(path) {
+				if (!path && path == "") return;
 				this.$Router.push({
 					name: path
 				})
@@ -399,6 +482,22 @@
 				if (scrollTop > 407) this.isScroll = true;
 				else this.isScroll = false;
 			},
+			checkUp() {
+				this.$http.post('/userlog/addLog', {
+					params: JSON.stringify({
+						type: 'clock'
+					})
+				}).then(res => {
+					console.log(res)
+					if (res.data.code) {
+						uni.$u.toast('签到' + res.data.msg)
+					} else {
+						if (res.data.msg != '你的操作太频繁了') {
+							uni.$u.toast(res.data.msg)
+						}
+					}
+				})
+			}
 		}
 	}
 </script>

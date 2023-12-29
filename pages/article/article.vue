@@ -1,11 +1,12 @@
 <template>
 	<z-paging-swiper>
 		<z-paging ref="comments" v-model="comments" @query="getComments" :auto-scroll-to-top-when-reload="false"
-			:auto-clean-list-when-reload="false" v-show="!loading" @scroll="onScroll" @onRefresh="onRefresh">
+			:auto-clean-list-when-reload="false" v-show="!loading" @scroll="onScroll" @onRefresh="onRefresh"
+			cache-mode="always" use-cache :cache-key="`article_mid-${cid}`">
 			<template #top>
 				<u-navbar placeholder fixed style="z-index: 10;">
 					<view slot="left" style="display:flex;align-items: center;">
-						<u-icon name="arrow-left" size="20" @click="$Router.back()"></u-icon>
+						<i class="ess icon-left_line" style="font-size: 60rpx;" @click="$Router.back(1)"></i>
 						<view style="margin-left: 40rpx;display: flex;align-items: center;"
 							@click="goProfile(article.authorId)" v-show="showNavAvatar">
 							<u-avatar :src="article && article.authorInfo && article.authorInfo.avatar" size="28"
@@ -15,23 +16,29 @@
 						</view>
 					</view>
 					<view slot="right">
-						<view v-if="showNavAvatar"
-							style="display: flex; align-items: center;border-radius: 50rpx;border:2rpx solid #85a3ff32;padding: 8rpx 16rpx;">
+						<view v-show="showNavAvatar"
+							style="display: flex; align-items: center;border-radius: 50rpx;border:2rpx solid #85a3ff32;padding: 0rpx 16rpx;line-height: 1;">
 							<u-row customStyle="margin-right:20rpx;" @click="follow(article.authorId)">
-								<u-icon name="plus" size="12" :color="article.authorInfo.isfollow?'':'#85a3ff'"
-									v-if="!article.authorInfo.isfollow"></u-icon>
-								<text style="font-size: 26rpx;margin-left: 10rpx;padding-right:20rpx;"
-									:style="{color:article.authorInfo.isfollow?'':'#85a3ff'}">{{article.authorInfo.isfollow?'已关注':'关注'}}</text>
+								<i class="ess icon-add_line" style="font-size: 30rpx;font-weight: 600;"
+									:style="{color:article && article.authorInfo &&article.authorInfo.isfollow?'':'#85a3ff'}"
+									v-if="article && article.authorInfo &&!article.authorInfo.isfollow"></i>
+
+								<text style="font-size: 26rpx;margin-left: 10rpx;padding-right:20rpx;font-weight: 600;"
+									:style="{color:article && article.authorInfo && article.authorInfo.isfollow?'':'#85a3ff'}">{{article && article.authorInfo && article.authorInfo.isfollow?'已关注':'关注'}}</text>
 							</u-row>
-							<u-icon name="more-dot-fill" @click="showMore = true"></u-icon>
+							<view>
+								<i class="ess icon-more_1_line" style="font-size: 60rpx;" @click="showMore = true"></i>
+							</view>
 						</view>
-						<u-icon name="more-dot-fill" @click="showMore = true" v-else></u-icon>
+						<i class="ess icon-more_1_line" style="font-size: 60rpx;" @click="showMore = true"
+							v-show="!showNavAvatar"></i>
 					</view>
 				</u-navbar>
 			</template>
-			<view style="margin: 10rpx 30rpx 30rpx 30rpx;" v-if="article" @touchend="touchEnd" @touchmove="touchMove">
+			<view style="padding: 10rpx 30rpx 30rpx 30rpx;" v-if="article" @touchend="touchEnd" @touchmove="touchMove">
 				<articleHeader :data="article" @follow="follow($event)"></articleHeader>
-				<articleContent :data="article" :autoPreview="isScroll" @ready="loading = false"></articleContent>
+				<articleContent :data="article" :autoPreview="isScroll" @ready="loading = false" @hideTap="hideTap">
+				</articleContent>
 				<articleFooter :data="article"></articleFooter>
 			</view>
 			<!-- 评论区 -->
@@ -41,9 +48,11 @@
 				<view style="position: relative;top: 0;padding: 30rpx 30rpx 0 30rpx;" @touchmove.stop>
 					<u-row>
 						<view @click="showOrderList = !showOrderList" style="display: flex; align-items: center;">
-							<text style="margin-right: 10rpx;">{{orderName}}</text>
-							<u-icon :name="showOrderList?'arrow-up-fill':'arrow-down-fill'" size="10"
-								color="#999"></u-icon>
+							<text
+								style="margin-right: 6rpx;font-size: 30rpx;color: #666;font-weight: 600;">{{orderName}}</text>
+							<i class="ess" style="font-size: 50rpx;"
+								:class="showOrderList?'icon-up_small_fill':'icon-down_small_fill'"></i>
+
 						</view>
 					</u-row>
 					<u-transition :show="showOrderList"
@@ -70,9 +79,10 @@
 				<view style="position: relative;top: 0;padding: 30rpx 30rpx 0 30rpx;" @touchmove.stop>
 					<u-row>
 						<view @click="showOrderList = !showOrderList" style="display: flex; align-items: center;">
-							<text style="margin-right: 10rpx;">{{orderName}}</text>
-							<u-icon :name="showOrderList?'arrow-up-fill':'arrow-down-fill'" size="10"
-								color="#999"></u-icon>
+							<text
+								style="margin-right: 6rpx;font-size: 30rpx;color: #666;font-weight: 600;">{{orderName}}</text>
+							<i class="ess" style="font-size: 50rpx;"
+								:class="showOrderList?'icon-up_small_fill':'icon-down_small_fill'"></i>
 						</view>
 					</u-row>
 					<u-transition :show="showOrderList"
@@ -105,7 +115,7 @@
 				</block>
 			</view>
 			<template #bottom>
-				<u-row customStyle="padding-top:10rpx;padding:20rpx" justify="space-between">
+				<u-row customStyle="padding:10rpx 20rpx;border-top:#85a3ff1e solid 1rpx" justify="space-between">
 					<u-col span="6">
 						<u-row customStyle="padding:14rpx 14rpx;border-radius: 50rpx;background:#85a3ff1e"
 							class="u-info" @click="showComment = true">
@@ -117,20 +127,23 @@
 						<u-row customStyle="margin-left:20rpx;flex:1" justify="space-around">
 							<view style="display: flex; flex-direction: column;align-items: center;"
 								@click="$refs.reward.open()">
-								<u-icon name="rmb-circle" size="20"></u-icon>
+								<i class="ess icon-copper_coin_line" style="font-size: 44rpx;"></i>
 								<u-text text="发电" size="12"></u-text>
 							</view>
 							<view style="display: flex; flex-direction: column;align-items: center;"
 								@click="$u.throttle(btnTap('mark'),1000,true)">
-								<u-icon :color="article && article.isMark?'#85a3ff':''" name="star" size="22"
-									:class="{'animate__animated animate__pulse':article && article.isMark}"></u-icon>
+								<i class="ess icon-star_line" style="font-size: 44rpx;"
+									:style="{color:article && article.isMark?'#85a3ff':''}"
+									:class="{'animate__animated animate__pulse':article && article.isMark}"></i>
+
 								<u-text text="收藏" size="12"></u-text>
 							</view>
 
 							<view style="display: flex; flex-direction: column;align-items: center;"
 								@click="$u.throttle(btnTap('likes'),1000,true)">
-								<u-icon :color="article && article.isLike?'#85a3ff':''" name="thumb-up" size="22"
-									:class="{'animate__animated animate__bounceIn':article && article.isLike}"></u-icon>
+								<i class="ess icon-thumb_up_2_line" style="font-size: 44rpx;"
+									:style="{color:article && article.isLike?'#85a3ff':''}"
+									:class="{'animate__animated animate__pulse':article && article.isLike}"></i>
 								<u-text text="点赞" size="12"></u-text>
 							</view>
 						</u-row>
@@ -142,20 +155,16 @@
 		<!-- 页面公用组件 -->
 		<!-- 回复文章 -->
 		<u-popup :show="showComment" @close="showComment = false;pid = 0" round="20" :z-index="10074"
-			:customStyle="{transform: `translateY(${-keyboardHeight+'px'})`,transition:'transform 0.3s ease-in-out',padding:30+'rpx'}">
+			:customStyle="{transform: `translateY(${-keyboardHeight+'px'})`,transition:'transform 0.3s ease',padding:30+'rpx'}">
 			<editor id="editor" :adjust-position="false" :show-img-size="false" :show-img-resize="false"
 				:show-img-toolbar="false" @ready="onEditorReady" placeholder="说点什么"
 				style="background: #85a3ff1e;height: auto;min-height: 60px;max-height: 100px;border-radius: 20rpx;padding: 8rpx 16rpx;">
 			</editor>
-			<!-- <u--textarea :adjustPosition="false" :cursorSpacing="40" type="textarea" v-model="commentText"
-				placeholder="灵感迸发" border="none"
-				customStyle="background:#85a3ff1e;padding:4rpx 10rpx;border-radius:20rpx"></u--textarea> -->
 			<u-row customStyle="margin-top:20rpx" justify="space-between">
 				<u-col span="2">
 					<u-row justify="space-between">
 						<block v-for="(item,index) in cBtn" :key="index">
-							<u-icon :name="item.icon" size="24" :color="showComemntBtn == item.name?'#85a3ff':''"
-								@click="cBtnTap(item.name)"></u-icon>
+							<i class="ess" :class="item.icon" style="font-size: 44rpx;" @click="cBtnTap(item.name)"></i>
 						</block>
 					</u-row>
 				</u-col>
@@ -231,10 +240,10 @@
 					<text>分享至</text>
 				</view>
 				<view style="margin-top: 50rpx;">
-					<u-row customStyle="border-bottom:1rpx solid #85a3ff0a;padding-bottom:30rpx"
-						justify="space-between">
+					<u-row customStyle="border-bottom:1rpx solid #85a3ff0a;padding-bottom:30rpx" justify="space-around">
 						<block v-for="(item,index) in share" :key="index">
-							<u-row align="center" customStyle="flex-direction:column">
+							<u-row align="center" customStyle="flex-direction:column"
+								@click="shareTap(item.provider,item.type,item.scene,article.title,filterHtml(article.text),'https://baidu.com',article.images[0])">
 								<view style="padding: 20rpx;border-radius: 100rpx;" :style="{background:item.color}">
 									<u-icon :name="item.icon" color="white" size="24"></u-icon>
 								</view>
@@ -243,35 +252,49 @@
 						</block>
 					</u-row>
 					<view style="display: flex;flex-direction: column;margin-top: 50rpx;">
-						<u-row customStyle="margin:20rpx 0">
-							<u-icon name="thumb-down" size="24"></u-icon>
-							<text style="margin-left:10rpx">我不喜欢这类内容</text>
+						<u-row customStyle="margin-bottom:30rpx">
+							<i class="ess icon-alert_line" style="font-size: 40rpx;"></i>
+							<text style="margin-left:20rpx">举报</text>
 						</u-row>
-						<u-row customStyle="margin:20rpx 0">
-							<u-icon name="warning" size="24"></u-icon>
-							<text style="margin-left:10rpx">举报</text>
+						<u-row customStyle="margin-bottom: 30rpx;">
+							<i class="ess icon-flash_line" style="font-size: 40rpx;"></i>
+							<text style="margin-left:20rpx">复制链接</text>
 						</u-row>
-						<u-row customStyle="margin:20rpx 0">
-							<u-icon name="close-circle" size="24"></u-icon>
-							<text style="margin-left:10rpx">屏蔽用户</text>
+						<u-row customStyle="margin-bottom: 30rpx;">
+							<i class="ess icon-share_forward_line" style="font-size: 40rpx;"></i>
+							<text style="margin-left:20rpx">通过系统分享</text>
 						</u-row>
-						<u-row customStyle="margin:20rpx 0">
-							<u-icon name="share" size="24"></u-icon>
-							<text style="margin-left:10rpx">复制链接</text>
-						</u-row>
-						<u-row customStyle="margin:20rpx 0">
-							<u-icon name="more-dot-fill" size="24"></u-icon>
-							<text style="margin-left:10rpx">通过系统分享</text>
-						</u-row>
-						<view style="margin: 20rpx 0;">
-							<text
-								v-if="article&& article.authorId == $store.state.userInfo.uid|| $store.state.userInfo.groupKey =='administrator'"
-								@click="goEdit()">编辑</text>
+						<view
+							v-if="article&& article.authorId == $store.state.userInfo.uid|| $store.state.userInfo.groupKey =='administrator'">
+							<u-row customStyle="margin-bottom: 30rpx;" @click="goEdit()">
+								<i class="ess icon-edit_line" style="font-size: 40rpx;"></i>
+								<text style="margin-left:20rpx">编辑</text>
+							</u-row>
+							<u-row customStyle="margin-bottom: 30rpx;color:red" @click="showDelete = true">
+								<i class="ess icon-delete_2_line" style="font-size: 40rpx;"></i>
+								<text style="margin-left:20rpx">删除</text>
+							</u-row>
+
 						</view>
 
 					</view>
 				</view>
 			</view>
+			<u-popup :show="showDelete" :round="10" mode="center" @close="showDelete = false" customStyle="width:500rpx">
+				<view
+					style="display: flex;flex-direction: column;align-items: center;justify-content: center;padding: 50rpx;">
+					<text style="font-size: 34rpx;">提示</text>
+					<view style="margin-top:30rpx">
+						<text>是否确定删除？</text>
+					</view>
+					<u-row customStyle="margin-top: 60rpx;flex:1;width:100%" justify="space-between">
+						<u-button plain color="#85a3ff" customStyle="height:60rpx;margin-right:10rpx" shape="circle"
+							@click="showDelete = false">取消</u-button>
+						<u-button color="#85a3ff" customStyle="height:60rpx;margin-left:10rpx" shape="circle"
+							@click="deleteArticle()">确定</u-button>
+					</u-row>
+				</view>
+			</u-popup>
 		</u-popup>
 		<!-- 上传进度 -->
 		<uv-modal :show="showLoading" ref="upload" :zIndex="10076"
@@ -283,10 +306,32 @@
 			<text v-if="uploadErr.status">错误信息：{{uploadErr.msg}}</text>
 			<view slot="confirmButton"></view>
 		</uv-modal>
+		<u-popup :show="showPay" :round="10" mode="center" @close="showPay = false" customStyle="width:500rpx">
+			<view
+				style="display: flex;flex-direction: column;align-items: center;justify-content: center;padding: 50rpx;">
+				<text style="font-size: 34rpx;">提示</text>
+				<view style="margin-top:30rpx">
+					<text>是否确定查看？</text>
+				</view>
+				<u-row customStyle="margin-top: 60rpx;flex:1;width:100%" justify="space-between">
+					<u-button plain color="#85a3ff" customStyle="height:60rpx;margin-right:10rpx" shape="circle"
+						@click="showPay = false">取消</u-button>
+					<u-button color="#85a3ff" customStyle="height:60rpx;margin-left:10rpx" shape="circle"
+						@click="buyHide()">确定</u-button>
+				</u-row>
+			</view>
+		</u-popup>
+		
 	</z-paging-swiper>
 </template>
 
 <script>
+	import {
+		shareTap
+	} from '@/common/common.js';
+	import {
+		filterHtml
+	} from '@/common/common.js';
 	import articleHeader from '@/pages/article/components/header.vue';
 	import articleContent from '@/pages/article/components/content.vue';
 	import articleFooter from '@/pages/article/components/footer.vue';
@@ -304,6 +349,8 @@
 		mixins: [ZPMixin],
 		data() {
 			return {
+				showDelete: false,
+				isReply: false,
 				editorCtx: null,
 				percentage: 30,
 				showLoading: false,
@@ -312,6 +359,7 @@
 					msg: ''
 				},
 				images: [],
+				showPay: false,
 				showReward: false,
 				showOrderList: false,
 				showNavAvatar: false,
@@ -356,27 +404,35 @@
 				],
 				cBtn: [{
 					name: '表情',
-					icon: 'heart',
+					icon: 'icon-emoji_line',
 				}, {
 					name: '图片',
-					icon: 'photo',
+					icon: 'icon-pic_line',
 				}],
 				share: [{
 						name: '微信',
 						icon: 'weixin-fill',
-						color: 'green'
+						provider: 'weixin',
+						type: 0,
+						scene: 'WXSceneSession',
+						color: '#46d262'
 					},
 					{
 						name: '朋友圈',
 						icon: 'moments',
-						color: 'green'
+						provider: 'weixin',
+						type: 0,
+						scene: 'WXSceneTimeline',
+						color: '#46d262'
 					},
 					{
 						name: 'QQ',
 						icon: 'qq-fill',
-						color: 'blue'
+						provider: 'qq',
+						type: 2,
+						scene: '',
+						color: '#0070ff'
 					},
-
 				],
 				manage: [{
 						name: '举报',
@@ -408,7 +464,7 @@
 				this.showMore = false;
 				this.$Router.$lockStatus = false
 				return
-			} 
+			}
 			next();
 
 		},
@@ -428,11 +484,10 @@
 			})
 		},
 		methods: {
-			shareTap(index) {
-				console.log(index)
-			},
+			shareTap,
+			filterHtml,
 			getData(id) {
-				this.$http.get('/typechoContents/contentsInfo', {
+				this.$http.get('/article/info', {
 					params: {
 						key: id ? id : this.cid,
 						isMd: 1,
@@ -523,10 +578,9 @@
 				if (order.name == '只看楼主') {
 					params.order = null
 				}
-				this.$http.get('/typechoComments/commentsList', {
+				this.$http.get('/comments/commentsList', {
 					params
 				}).then(res => {
-					console.log(res)
 					if (res.statusCode == 200) {
 						this.$refs.comments.complete(res.data.data)
 					}
@@ -535,6 +589,7 @@
 				})
 			},
 			reply() {
+				if (this.isReply) return;
 				this.editorCtx.getContents({
 					success: (res) => {
 						this.commentText = res.html.replace(/<img\s+[^>]*alt="([^"]+)_emoji"[^>]*>/g,
@@ -555,8 +610,8 @@
 							text: this.commentText,
 							images: this.images
 						})
-
-						this.$http.post('/typechoComments/commentsAdd', {
+						this.isReply = true
+						this.$http.post('/comments/commentsAdd', {
 							params
 						}).then(res => {
 							if (res.data.code) {
@@ -565,23 +620,23 @@
 								this.showComment = false
 								this.images = []
 								this.$refs.comments.reload()
+
 							} else {
 								uni.$u.toast(res.data.msg)
 							}
+							this.isReply = false
+						}).catch(err => {
+							this.isReply = false
 						})
 					}
-
 				})
-
-
-
 
 			},
 			replaceEmoji(html) {
 				if (html) {
 					return html.replace(
 						/<img[^>]*?alt="src=([^"]+)\|poster=([^"]+)\|type=video"[^>]*?>/g, (match, src, poster) => {
-							return `<div style="border-radius:10px"><video src="${src}" poster="${poster}" muted width="100%" style="border-radius:10px" /></div>`
+							return `<div style="border-radius:10px"><video src="${src}" poster="${poster}" object-fit muted width="100%" style="border-radius:10px" /></div>`
 						}).replace(/_|#([^|]+)_(([^|]+))|/g, (match, name, key) => {
 						const emoji = this.$emoji.data.find(e => e.name === name)
 						if (emoji) {
@@ -591,13 +646,19 @@
 						// 如果没有找到,直接返回空字符串
 						// 即删除整个匹配文本
 						return ''
-					}).replace(/\|</g, '<').replace(/>\|/g, '>')
+					}).replace(/\|</g, '<').replace(/>\|/g, '>').replace(/【(回复|付费)查看：([^】]+)】/g, (match, type,
+						content) => {
+						return `<a style="text-decoration:unset;color:#85a3ff;border:#85a3ff dashed 1px;border-radius:10px;text-align:center;margin:10px 0;display:flex;flex:1;padding:20px;justify-content:center" data-type="${type}">
+						${type}内容，${type}后查看
+						</a>`;
+					})
+
 				}
 
 			},
 			btnTap(type, num) {
 
-				this.$http.post('/typechoUserlog/addLog', {
+				this.$http.post('/userlog/addLog', {
 					params: JSON.stringify({
 						type,
 						cid: this.article.cid,
@@ -664,7 +725,7 @@
 					uni.$u.toast('不可以关注自己');
 					return;
 				};
-				this.$http.post('/typechoUsers/follow', {
+				this.$http.post('/user/follow', {
 					touid: id,
 				}).then(res => {
 					uni.$u.toast(res.data.msg)
@@ -760,6 +821,37 @@
 				uni.previewImage({
 					urls,
 					current
+				})
+			},
+
+			hideTap(type) {
+				if (type == '付费') this.showPay = true
+				else this.showComment = true;
+			},
+			buyHide() {
+				this.$http.post('/article/buyHide', {
+					cid: this.article.cid
+				}).then(res => {
+					if (res.data.code) {
+						uni.$u.toast(res.data.msg)
+						this.showPay = false
+						setTimeout(() => {
+							this.getData()
+						}, 800)
+					}
+				})
+			},
+			deleteArticle(){
+				this.$http.post('/article/articleDelete',{
+					key:this.article.cid
+				}).then(res=>{
+					if(res.data.code){
+						this.showDelete = false
+						uni.$u.toast(res.data.msg)
+						setTimeout(()=>{
+							this.$Router.back()
+						})
+					}
 				})
 			}
 		}

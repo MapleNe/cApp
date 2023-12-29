@@ -2,8 +2,10 @@
 	<view>
 		<z-paging @query="getData" v-model="messages" ref="paging" @onRefresh="onRefresh" :auto-clean-list-when-reload="false" :auto-scroll-to-top-when-reload="false">
 			<template #top>
-				<u-navbar placeholder title="消息通知">
-					<view slot="left"></view>
+				<u-navbar placeholder title="消息通知" autoBack>
+					<view slot="left">
+						<i class="ess icon-left_line" style="font-size: 60rpx;"></i>
+					</view>
 				</u-navbar>
 				<view style="margin: 30rpx;">
 					<uv-scroll-list :indicator="false">
@@ -23,7 +25,7 @@
 						</view>
 						<text style="margin-left:20rpx">财务通知</text>
 					</u-row>
-					<i style="background: red;padding: 8rpx;border-radius: 10rpx;" v-if="noticeNum.finances"></i>
+					<i style="background: red;padding: 8rpx;border-radius: 10rpx;" v-if="$store.state.noticeNum.finances"></i>
 				</u-row>
 				<u-row customStyle="margin-bottom:60rpx" justify="space-between" @click="goPath('systems')">
 					<u-row>
@@ -33,7 +35,7 @@
 						</view>
 						<text style="margin-left:20rpx">系统通知</text>
 					</u-row>
-					<i style="background: red;padding: 8rpx;border-radius: 10rpx;" v-if="noticeNum.systems"></i>
+					<i style="background: red;padding: 8rpx;border-radius: 10rpx;" v-if="$store.state.noticeNum.systems"></i>
 				</u-row>
 				<u-row customStyle="margin-bottom:60rpx" justify="space-between" @click="goPath('comments')">
 					<u-row>
@@ -43,7 +45,7 @@
 						</view>
 						<text style="margin-left:20rpx">评论通知</text>
 					</u-row>
-					<i style="background: red;padding: 8rpx;border-radius: 10rpx;" v-if="noticeNum.comments"></i>
+					<i style="background: red;padding: 8rpx;border-radius: 10rpx;" v-if="$store.state.noticeNum.comments"></i>
 				</u-row>
 
 				<block v-for="(item, index) in messages" :key="index">
@@ -52,9 +54,9 @@
 						<u-row style="flex-direction: column;margin-left: 20rpx;flex: 1;" align="top">
 							<text>{{item.userJson.name}}</text>
 							<u-row justify="space-between" style="flex:1;width: 100%;font-size: 26rpx;">
-								<text class="u-line-1">{{item.lastMsg.text}}</text>
+								<text class="u-line-1">{{item.lastMsg && item.lastMsg.text}}</text>
 								<text style="font-size: 26rpx;flex-shrink: 0;"
-									v-if="item.lastMsg">{{$u.timeFormat(item.lastTime,'hh:MM')}}</text>
+									v-if="item.lastMsg">{{$u.timeFrom(item.lastTime,'hh:MM')}}</text>
 							</u-row>
 						</u-row>
 					</u-row>
@@ -70,17 +72,21 @@
 			index: {
 				type: [String, Number],
 				default: 0
+			},
+			current:{
+				type: [String, Number],
+				default: 0
 			}
 		},
 		watch: {
-			index: {
+			current: {
 				handler(e) {
-					if (e == this.index) {
+					if (e == this.current) {
 						this.getNoticeNum()
 						this.$refs.paging.reload()
 					}
 				},
-				immediate: true,
+				immediate: false,
 				deep: true
 			}
 		},
@@ -103,7 +109,7 @@
 		methods: {
 			getData(page, limit) {
 				if (!this.$store.state.hasLogin) return;
-				this.$http.get('/typechoChat/myChat', {
+				this.$http.get('/chat/myChat', {
 					params: {
 						page,
 						limit,
@@ -111,14 +117,13 @@
 					}
 
 				}).then(res => {
-					console.log(res)
 					if (res.data.code) {
 						this.$refs.paging.complete(res.data.data)
 					}
 				})
 			},
 			getRoom(page, limit) {
-				this.$http.get('/typechoChat/allChat', {
+				this.$http.get('/chat/allChat', {
 					params: {
 						type: 1,
 						order: 'lastTime',
@@ -126,17 +131,18 @@
 					}
 
 				}).then(res => {
-					console.log(res)
+					
 					if (res.data.code) {
 						this.rooms = res.data.data
 					}
 				})
 			},
 			goPrivate(data) {
+				console.log(data)
 				this.$Router.push({
 					path: '/pages/notice/private',
 					query: {
-						id: data.toid,
+						id: data.userJson.uid,
 						nickname: data.userJson.name
 					}
 				})
@@ -150,14 +156,13 @@
 
 			},
 			getNoticeNum() {
-				this.$http.get('/typechoUsers/unreadNum', {
+				this.$http.get('/user/unreadNum', {
 					params: {
 						token: this.$store.state.hasLogin ? uni.getStorageSync('token') : ''
 					}
 				}).then(res => {
-					console.log(res)
 					if (res.data.code) {
-						this.noticeNum = res.data.data
+						this.$store.commit('setNoticeNum',res.data.data)
 					}
 				})
 			},

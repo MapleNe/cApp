@@ -1,10 +1,13 @@
 <template>
 	<view>
 		<uv-navbar autoBack placeholder rightText="">
+			<view slot="left">
+				<i class="ess icon-left_line" style="font-size: 60rpx;"></i>
+			</view>
 			<view slot="right">
-				<u-button :color="article.category.mid&&article.title?'#85a3ff':'#aaa'" shape="circle"
+				<u-button :color="article.category.mid&&article.title?'#85a3ff':'#e6e6e6'" shape="circle"
 					customStyle="width:150rpx;height:50rpx"
-					@click="article.category.mid&&article.title?save():$u.toast('要选择正确的板块哦~')">下一步</u-button>
+					@click="article.category.mid&&article.title?save():$u.toast('要选择正确的板块哦~')">发布</u-button>
 			</view>
 		</uv-navbar>
 		<view style="padding: 30rpx;" id="image">
@@ -28,39 +31,40 @@
 				placeholder="请输入标题(必须)" placeholderStyle="font-size:40rpx" font-size="20"
 				customStyle="padding: 0;"></u-input>
 		</view>
-		<view style="padding: 20rpx 30rpx 30rpx 30rpx;">
+		<view style="padding: 20rpx 30rpx 0rpx 30rpx;">
 			<editor id="editor" :adjust-position="false" placeholder="请输入内容" @ready="onEditorReady"
-				:style="`height:${windowHeight - keyboardHeight}px`"></editor>
+				:style="`height:${windowHeight}px`"></editor>
 		</view>
 		<uv-modal ref="publish" :closeOnClickOverlay="false" :showConfirmButton="false" :show-cancel-button="false"
 			width="300rpx">
 			<uv-loading-icon text="发布中..." mode="circle" color="#85a3ff"></uv-loading-icon>
 			<view slot="confirmButton"></view>
 		</uv-modal>
-		<u-popup customStyle="border-radius:40rpx 40rpx 0 0" :show="showCategory" @close="showCategory = false">
-			<view style="position: absolute;top:0; width: 100%;">
-				<view style="padding: 30rpx;">
-					<u-icon name="close" size="20" @click="showCategory = false"></u-icon>
-				</view>
-			</view>
-			<view style="height: 70vh;padding:30rpx">
+		<u-popup customStyle="border-radius:40rpx 40rpx 0 0;" :show="showCategory" @close="showCategory = false"
+			:closeable="true">
+
+			<view style="height: 70vh;padding:30rpx;background:#85a3ff0a">
 				<view style="text-align: center;">选择板块</view>
 				<view style="margin-top: 30rpx;">
-					<u-grid :border="false" col="3">
-						<u-grid-item v-for="(item,index) in category" :key="index" @click="article.category = item"
-							:style="`background:${item.opt.primary};border-radius:20rpx;height:200rpx;width:200rpx`">
-							<view
-								style="display: flex; flex-direction: column; justify-content: center;align-items: center;">
-								<image :src="item.imgurl" style="width: 100rpx;height: 100rpx;border-radius: 20rpx;"
-									mode="aspectFill"></image>
-								<view style="margin-top: 20rpx;font-size: 30rpx;">
-									<text>{{item.name}}</text>
-								</view>
-							</view>
+					<scroll-view scroll-y style="height: 65vh;">
+						<u-row justify="space-between" style="flex-wrap: wrap;">
+							<block v-for="(item,index) in category" :key="index">
+								<u-col :span="5.8">
+									<u-row style="padding: 20rpx;" align="top" @click="article.category = item;showCategory = false">
+										<image :src="item.imgurl"
+											style="width: 100rpx;height: 100rpx;border-radius: 20rpx;background: #f7f7f7;">
+										</image>
+										<view style="margin-left: 20rpx;display: flex;flex-direction: column;">
+											<text style="font-weight: 600;" class="u-line-1">{{item.name}}</text>
+											<text style="font-size: 30rpx;color: #999;"
+												class="u-line-1">{{item.description}}</text>
+										</view>
+									</u-row>
+								</u-col>
+							</block>
 
-
-						</u-grid-item>
-					</u-grid>
+						</u-row>
+					</scroll-view>
 				</view>
 			</view>
 		</u-popup>
@@ -95,13 +99,10 @@
 				},
 				editorCtx: null,
 				windowHeight: 0,
-				keyboardHeight: 0,
+
 			}
 		},
 		created() {
-			uni.onKeyboardHeightChange(data => {
-				this.keyboardHeight = data.height
-			})
 			this.initData()
 		},
 		onReady() {
@@ -123,7 +124,7 @@
 			},
 
 			getCategory() {
-				this.$http.get('/typechoMetas/metasList', {
+				this.$http.get('/category/list', {
 					params: {
 						searchParams: JSON.stringify({
 							type: 'category',
@@ -134,7 +135,6 @@
 					if (res.data.code) {
 						let data = res.data.data;
 						for (let i in res.data.data) {
-							if (typeof(res.data.data[i].opt) == 'string') data[i].opt = JSON.parse(data[i].opt)
 							if (res.data.data[i].mid == 1) this.article.category = res.data.data[i];
 						}
 						this.category = data
@@ -142,7 +142,7 @@
 				})
 			},
 			getTags() {
-				this.$http.get('/typechoMetas/metasList', {
+				this.$http.get('/category/list', {
 					params: {
 						searchParams: JSON.stringify({
 							type: 'tag',
@@ -176,46 +176,45 @@
 					uni.$u.toast('标题太短')
 					return
 				}
-
 				this.editorCtx.getContents({
 					success: res => {
 						this.article.text = res.text
+						if (res.text.length < 4) {
+							uni.$u.toast('再多说点什么吧~')
+							return
+						}
+						this.$refs.publish.open()
+						let tags = this.article.tags.map(tag => tag.mid).join(',')
+						let images = this.images.map(file => file.url);
+						this.$http.post('/article/contentsAdd', {
+							params: JSON.stringify({
+								title: this.article.title,
+								text: this.article.text,
+								category: this.article.category.mid,
+								mid: this.article.category.mid,
+								tag: tags,
+								type: 'photo',
+								opt: JSON.stringify(this.article.opt),
+								images: images
+							}),
+							text: this.article.text,
+						}).then(res => {
+							if (res.data.code) {
+								setTimeout(() => {
+									this.$refs.publish.close()
+									uni.$u.toast(res.data.msg)
+									setTimeout(() => {
+										this.$Router.back(1)
+									}, 800)
+								}, 1500)
+							} else {
+								uni.$u.toast(res.data.msg)
+								this.$refs.publish.close()
+							}
+						})
 					}
 				})
-				if (this.article.text.length < 10) {
-					uni.$u.toast('再多写点吧~')
-					return;
-				}
 
-				this.$refs.publish.open()
-				let tags = this.article.tags.map(tag => tag.mid).join(',')
-				let images = this.images.map(file => file.url);
-				this.$http.post('/typechoContents/contentsAdd', {
-					params: JSON.stringify({
-						title: this.article.title,
-						text: this.article.text,
-						category: this.article.category.mid,
-						mid: this.article.category.mid,
-						tag: tags,
-						type: 'photo',
-						opt: JSON.stringify(this.article.opt),
-						images: images
-					}),
-					text: this.article.text,
-				}).then(res => {
-					if (res.data.code) {
-						setTimeout(() => {
-							this.$refs.publish.close()
-							uni.$u.toast(res.data.msg)
-							setTimeout(() => {
-								this.$Router.back(1)
-							}, 800)
-						}, 1500)
-					} else {
-						uni.$u.toast(res.data.msg)
-						this.$refs.publish.close()
-					}
-				})
 			},
 			// 新增图片
 			async afterRead(event) {

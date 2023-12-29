@@ -1,6 +1,9 @@
 <template>
 	<view>
 		<u-navbar title="个人资料" autoBack placeholder>
+			<view slot="left">
+				<i class="ess icon-left_line" style="font-size: 60rpx;"></i>
+			</view>
 		</u-navbar>
 		<view style="display: flex;justify-content: center;flex-direction: column;margin: 30rpx;">
 			<view style="margin-top: 100rpx;display: flex;justify-content: center;">
@@ -139,7 +142,7 @@
 				})
 			},
 			save() {
-				this.$http.post('/typechoUsers/userEdit', {
+				this.$http.post('/user/userEdit', {
 					params: JSON.stringify({
 						uid: this.userInfo.uid,
 						name: this.userInfo.name,
@@ -158,9 +161,10 @@
 			},
 			getUserInfo() {
 				if (!uni.getStorageSync('token')) return;
-				this.$http.get('/typechoUsers/userInfo', {
+				this.$http.get('/user/userInfo', {
 					params: {
-						key: this.userInfo.uid
+						key: this.userInfo.uid,
+						token: this.$store.state.hasLogin ? uni.getStorageSync('token') : ''
 					}
 				}).then(res => {
 					if (res.data.code) {

@@ -1,5 +1,7 @@
 <template>
-	<z-paging ref="paging" v-model="content" @query="getData" :auto="false">
+	<z-paging ref="paging" v-model="content" @query="getData" :auto="false" :auto-clean-list-when-reload="false"
+		:auto-scroll-to-top-when-reload="false" cache-mode="always" use-cache
+		:cache-key="`home_index_waterfall-${mid}`" >
 		<uv-waterfall ref="waterfall" v-model="content" :add-time="10" :left-gap="leftGap" :rightGap="rightGap"
 			:column-gap="columnGap" @changeList="changeList">
 			<!-- 第一列数据 -->
@@ -56,6 +58,10 @@
 				type: [Number, String],
 				default: 0,
 			},
+			mid: {
+				type: [String, Number],
+				default: 0,
+			}
 		},
 		components: {
 			articleFooter
@@ -104,21 +110,23 @@
 		},
 		methods: {
 			getData(page, limit) {
-				this.$http.get('/typechoContents/contentsList', {
+				this.$http.get('/article/articleList', {
 					params: {
 						page,
 						limit,
 						searchParams: JSON.stringify({
-							type: 'post'
+							mid: this.mid ? this.mid : '',
 						}),
-						order:'created desc'
+						order: 'istop desc, created desc',
+						token: this.$store.state.hasLogin ? uni.getStorageSync('token') : ''
 					}
 				}).then(res => {
 					if (res.statusCode == 200) {
 						this.$refs.paging.complete(res.data.data);
 						this.is_loaded = true
-						console.log(res)
 					}
+				}).catch(err => {
+					this.$refs.paging.complete(false)
 				})
 			},
 			goArticle(data) {

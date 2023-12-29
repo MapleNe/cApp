@@ -1,6 +1,10 @@
 <template>
 	<view>
-		<u-navbar placeholder title="管理面板" autoBack></u-navbar>
+		<u-navbar placeholder title="管理面板" autoBack>
+			<view slot="left">
+				<i class="ess icon-left_line" style="font-size: 60rpx;"></i>
+			</view>
+		</u-navbar>
 		<view style="margin: 30rpx;">
 			<u-grid customStyle="background:#85a3ff0a;padding:30rpx;border-radius:20rpx">
 				<u-grid-item v-for="(item,index) in data" :key="index">
@@ -56,8 +60,7 @@
 			<view style="width: 100%;">
 				<u-row justify="space-between">
 					<u-avatar :src="editCategory.imgurl" shape="square" size="50" @click="choose(true)"></u-avatar>
-					<image mode="aspectFill" :src="editCategory.opt && editCategory.opt.background"
-						@click="choose(false)"
+					<image mode="aspectFill" :src="editCategory.opt.background" @click="choose(false)"
 						style="border-radius: 10rpx;width: 100%;height: 100rpx;margin-left: 50rpx;background: #f7f7f7;">
 					</image>
 				</u-row>
@@ -166,7 +169,13 @@
 					name: null,
 					imgurl: null,
 					description: null,
-					opt: {}
+					opt: {
+						background: '',
+						primary: '',
+						underline: '',
+						color: ''
+					},
+					iswaterfall: false,
 				},
 				metasList: [{
 						name: '板块',
@@ -209,7 +218,7 @@
 				this.getAllData()
 			},
 			getAllData() {
-				this.$http.post('/typechoContents/allData').then(res => {
+				this.$http.post('/article/allData').then(res => {
 					if (res.data.code) {
 						let data = res.data.data
 						this.data = [{
@@ -235,7 +244,7 @@
 				})
 			},
 			getCategory() {
-				this.$http.get('/typechoMetas/metasList', {
+				this.$http.get('/category/list', {
 					page: 1,
 					limit: 30,
 					params: {
@@ -244,19 +253,27 @@
 						})
 					}
 				}).then(res => {
-					console.log(res)
 					if (res.data.code) {
 						let list = [];
 						for (let item of res.data.data) {
-							item.opt = JSON.parse(item.opt);
+							if (!item.opt) {
+								item.opt = {
+									background: '',
+									primary: '',
+									underline: '',
+									color: ''
+								};
+								console.log(item);
+							}
 							list.push(item);
 						}
 						this.category = list;
 					}
-				})
+				});
 			},
 			saveCategory(upload) {
-				this.$http.post('/typechoMetas/editMeta', {
+
+				this.$http.post('/category/update', {
 					params: JSON.stringify({
 						mid: this.editCategory.mid ? this.editCategory.mid : '',
 						imgurl: this.editCategory.imgurl,
@@ -275,7 +292,12 @@
 									name: null,
 									imgurl: null,
 									description: null,
-									opt: {}
+									opt: {
+										background: null,
+										primary: null,
+										underline: null,
+										color: null
+									}
 								}
 							}, 500)
 						}
@@ -283,7 +305,7 @@
 				})
 			},
 			addCategory() {
-				this.$http.post('/typechoMetas/addMeta', {
+				this.$http.post('/category/add', {
 					params: JSON.stringify({
 						imgurl: this.editCategory.imgurl,
 						name: this.editCategory.name,
@@ -302,7 +324,12 @@
 								name: null,
 								imgurl: null,
 								description: null,
-								opt: {}
+								opt: {
+									background: '',
+									primary: '',
+									underline: '',
+									color: ''
+								}
 							}
 						}, 500)
 					}
@@ -342,7 +369,12 @@
 						name: null,
 						imgurl: null,
 						description: null,
-						opt: {}
+						opt: {
+							background: null,
+							primary: null,
+							underline: null,
+							color: null
+						}
 					}
 				}, 500)
 
@@ -357,7 +389,7 @@
 				}
 			},
 			getContentInfo(id) {
-				this.$http.get('/typechoContents/contentsInfo', {
+				this.$http.get('/article/info', {
 					params: {
 						key: id,
 						isMd: 1,
@@ -372,7 +404,7 @@
 			},
 			saveArticle() {
 				console.log(this.editArticle.status)
-				this.$http.post('/typechoContents/contentsUpdate', {
+				this.$http.post('/article/articleUpdate', {
 					params: JSON.stringify({
 						title: this.editArticle.title,
 						cid: this.editArticle.cid,

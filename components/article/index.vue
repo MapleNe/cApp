@@ -1,22 +1,29 @@
 <template>
-	<view>
-		<z-paging ref="paging" v-model="content" @query="getData" :auto="false" :auto-clean-list-when-reload="false" :auto-scroll-to-top-when-reload="false" style="margin-bottom: 180rpx;">
-			<view style="margin: 20rpx;" v-if="isSwiper" @onRefresh="onRefresh">
-				<u-swiper height="160" :list="swiperList" keyName="image" :autoplay="false" circular
-					@click="swiperTap"></u-swiper>
+	<z-paging ref="paging" v-model="content" @query="getData" :auto-scroll-to-top-when-reload="false"
+		style="margin-bottom: 170rpx;" @onRefresh="onRefresh" auto-clean-list-when-reload>
+		<view style="margin: 20rpx;position: relative;top: 0;" v-if="isSwiper">
+			<u-swiper height="160" :list="swiperList" keyName="image" circular @click="swiperTap"
+				@change="swiperIndex = $event.current" radius="10"></u-swiper>
+			<view
+				style="font-size: 24rpx;background: #85a3ffa0;border-radius:20rpx 0rpx 20rpx 0 ;padding:6rpx 20rpx;position: absolute;bottom: 0;right: 0;"
+				v-if="swiperList.length">
+				<text style="color: #fff;">{{swiperIndex+1}}/{{swiperList.length}}</text>
 			</view>
-			<block v-for="(item,index) in content" :key="index">
-				<view @tap.stop="goArticle(item)" style="margin:30rpx 30rpx 0rpx 30rpx;padding-bottom: 10rpx;">
-					<article-header :data="item" @follow="$refs.paging.reload()"
-						@menuTap="$emit('edit',$event)"></article-header>
-					<article-content :data="item"></article-content>
-					<article-footer :data="item"></article-footer>
-				</view>
-				<view style="border-bottom:1rpx #f7f7f7 solid"></view>
-			</block>
-		</z-paging>
-	</view>
-
+		</view>
+		<view style="margin:30rpx" v-if="$store.state.appInfo&&$store.state.appInfo.announcement&&isSwiper">
+			<u-notice-bar :text="$store.state.appInfo.announcement" bgColor="#85a3ff3c" color="#85a3ff" mode="closable"
+				customStyle="border-radius: 20rpx;"></u-notice-bar>
+		</view>
+		<block v-for="(item,index) in content" :key="index" v-if="content.length">
+			<view @tap.stop="goArticle(item)" style="margin:30rpx 30rpx 0rpx 30rpx;padding-bottom: 10rpx;">
+				<article-header :data="item" @follow="$refs.paging.reload()"
+					@menuTap="$emit('edit',$event)"></article-header>
+				<article-content :data="item"></article-content>
+				<article-footer :data="item"></article-footer>
+			</view>
+			<view style="border-bottom:1rpx #f7f7f7 solid"></view>
+		</block>
+	</z-paging>
 </template>
 
 <script>
@@ -55,21 +62,11 @@
 			}
 		},
 		watch: {
-			tabbar: {
-				handler(index) {
-					if (index == this.swiper) {
-						if (!this.is_loaded) {
-							setTimeout(() => {
-								this.$refs.paging.reload()
-							}, 5)
-						}
-					}
-				},
-				immediate: true
-			}
+
 		},
 		data() {
 			return {
+				swiperIndex: 0,
 				content: [],
 				is_loaded: false,
 				swiperList: [],
@@ -83,18 +80,17 @@
 		},
 		methods: {
 			getData(page, limit) {
-				this.$http.get('/typechoContents/contentsList', {
+				this.$http.get('/article/articleList', {
 					params: {
 						page,
 						limit,
 						searchParams: JSON.stringify({
 							mid: this.mid ? this.mid : '',
 						}),
-						order: 'istop desc,created desc',
+						order: 'istop desc, created desc',
 						token: this.$store.state.hasLogin ? uni.getStorageSync('token') : ''
 					}
 				}).then(res => {
-					console.log(res)
 					if (res.statusCode == 200) {
 						this.$refs.paging.complete(res.data.data);
 						this.is_loaded = true
@@ -104,7 +100,7 @@
 				})
 			},
 			getSwiper() {
-				this.$http.get('/typechoContents/contentsList', {
+				this.$http.get('/article/articleList', {
 					params: {
 						searchParams: JSON.stringify({
 							isswiper: 1
@@ -112,12 +108,14 @@
 					}
 				}).then(res => {
 					const data = res.data.data
+					let list = [];
 					data.forEach(item => {
 						item.image = item.images[0]
-						this.swiperList.push({
+						list.push({
 							...item
 						});
 					});
+					this.swiperList = list;
 				})
 			},
 			swiperTap(index) {
@@ -138,8 +136,11 @@
 					}
 				})
 			},
-			onRefresh(){
+			onRefresh() {
 				this.getSwiper()
+			},
+			con(e) {
+				console.log(e)
 			}
 		}
 	}

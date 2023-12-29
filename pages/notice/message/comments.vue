@@ -4,7 +4,11 @@
 		<z-paging ref="paging" v-model="comments" @query="getData" :refresher-enabled="false" v-show="!loading">
 
 			<template #top>
-				<u-navbar bgColor="transparent" title="评论" placeholder autoBack></u-navbar>
+				<u-navbar bgColor="transparent" title="评论" placeholder autoBack>
+					<view slot="left">
+						<i class="ess icon-left_line" style="font-size: 60rpx;"></i>
+					</view>
+				</u-navbar>
 			</template>
 			<block v-for="(item,index) in comments">
 				<view style="margin:30rpx;background: #fff;border-radius: 20rpx;padding: 30rpx;"
@@ -13,12 +17,10 @@
 						<u-avatar :src="item.userJson.avatar" size="24"></u-avatar>
 						<text style="margin-left:20rpx;font-weight: 600;">{{item.userJson.name}}</text>
 					</u-row>
-					<u-row
-						customStyle="background:#f7f7f7;border-radius:20rpx;padding:6rpx 16rpx;color:#999;margin-bottom:10rpx">
-						<text style="flex-shrink: 0;">回复：</text>
-						<text class="u-line-1">{{item.contenTitle}}</text>
-					</u-row>
 					<u-parse class="u-line-2" :content="formatEmoji(item.text)"></u-parse>
+					<view style="border-left: #f7f7f7 6rpx solid;padding-left: 10rpx;margin: 10rpx 0;">
+						<text style="color: #999;font-size: 28rpx;">{{item.contenTitle}}</text>
+					</view>
 					<u-row justify="space-between" customStyle="color:#999;font-size:26rpx">
 						<text>{{$u.timeFormat(item.created,'mm-dd')}}</text>
 						<u-row customStyle="color:#85a3ff">
@@ -45,7 +47,7 @@
 		},
 		methods: {
 			getData(page, limit) {
-				this.$http.post('/typechoUsers/inbox', {
+				this.$http.post('/user/inbox', {
 					page,
 					limit,
 					type: 'comment'
@@ -78,7 +80,7 @@
 				})
 			},
 			clearNotice() {
-				this.$http.post('/typechoUsers/setRead', {
+				this.$http.post('/user/setRead', {
 					type: 'comment'
 				}).then(res => {
 					console.log(res.data.msg)

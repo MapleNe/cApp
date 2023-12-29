@@ -3,7 +3,11 @@
 		<z-paging ref="paging" @query="getMessages" v-model="messages" use-chat-record-mode auto-hide-keyboard-when-chat
 			use-page-scroll v-if="roomId">
 			<template #top>
-				<u-navbar placeholder autoBack :title="nickname"></u-navbar>
+				<u-navbar placeholder autoBack :title="nickname">
+					<view slot="left">
+						<i class="ess icon-left_line" style="font-size: 60rpx;"></i>
+					</view>
+				</u-navbar>
 			</template>
 			<view style="margin: 30rpx;">
 				<block v-for="(item,index) in messages" :key="index">
@@ -56,35 +60,39 @@
 			}
 		},
 		onPageScroll(e) {
-			if(e.scrollTop<=0){
+			if (e.scrollTop <= 0) {
 				this.$refs.paging.doChatRecordLoadMore()
 			}
 		},
 		onLoad(params) {
+			console.log(params)
 			this.nickname = params.nickname
 			this.id = params.id
 			this.getData(params.id)
-			console.log(params)
 		},
 		computed: {
 			...mapState(['userInfo'])
 		},
 		methods: {
 			getData(id) {
-				this.$http.post('/typechoChat/getPrivateChat', {
+
+				this.$http.post('/chat/getPrivateChat', {
 					touid: this.id
 				}).then(res => {
-					console.log(res)
 					if (res.data.code) {
 						this.roomId = res.data.data
 					}
 				})
 			},
 			getMessages(page) {
-				this.$http.post('/typechoChat/msgList', {
-					page,
-					limit: 30,
-					chatid: this.roomId
+				this.$http.get('/chat/msgList', {
+					params: {
+						page,
+						limit: 30,
+						chatid: this.roomId,
+						token: this.$store.state.hasLogin ? uni.getStorageSync('token') : ''
+					}
+
 				}).then(res => {
 					console.log(res)
 					if (res.data.code) {
@@ -95,21 +103,20 @@
 			sendMessage() {
 				this.editorCtx.getContents({
 					success: (res) => {
-						this.$http.post('/typechoChat/sendMsg', {
+						// 将消息添加到列表
+						this.$refs.paging.addChatRecordData({
+							uid: this.userInfo.uid,
+							userJson: {
+								uid: this.userInfo.uid
+							},
+							text: res.text
+						})
+						this.$http.post('/chat/sendMsg', {
 							chatid: this.roomId,
 							type: 0,
 							msg: res.text
 						}).then(ress => {
 							if (ress.data.code) {
-
-								// 将消息添加到列表
-								this.$refs.paging.addChatRecordData({
-									uid: this.userInfo.uid,
-									userJson: {
-										uid: this.userInfo.uid
-									},
-									text: res.text
-								})
 								// 清空编辑器消息
 								this.editorCtx.clear()
 							}

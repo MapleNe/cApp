@@ -75,7 +75,9 @@
 		},
 		methods: {
 			getData(page, limit) {
-				this.$http.get('/typechoContents/contentsList', {
+				if(!this.key.length) return;
+				console.log(this.key)
+				this.$http.get('/article/articleList', {
 					params: {
 						page,
 						limit,

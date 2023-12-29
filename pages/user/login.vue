@@ -191,7 +191,7 @@
 			// getCode() {
 
 			// 	if (this.$refs.uCode.canGetCode) {
-			// 		this.$http.get('/typechoUsers/RegSendCode', {
+			// 		this.$http.get('/user/RegSendCode', {
 			// 			params: {
 			// 				params: JSON.stringify({
 			// 					mail: this.account
@@ -205,7 +205,7 @@
 			// 	}
 			// },
 			getConfig() {
-				this.$http.get('/typechoUsers/regConfig').then(res => {
+				this.$http.get('/user/regConfig').then(res => {
 					console.log(res)
 					if (res.data.code) {
 						this.config = res.data.data
@@ -218,7 +218,7 @@
 					return;
 				}
 				if (this.$refs.uCode1.canGetCode) {
-					this.$http.get('/typechoUsers/SendCode', {
+					this.$http.get('/user/SendCode', {
 						params: {
 							params: JSON.stringify({
 								name: this.account
@@ -238,7 +238,7 @@
 					uni.$u.toast('请同意协议')
 					return;
 				}
-				this.$http.get('/typechoUsers/userFoget', {
+				this.$http.get('/user/userFoget', {
 					params: {
 						params: JSON.stringify({
 							name: this.account,
@@ -268,7 +268,7 @@
 					uni.$u.toast('请同意协议')
 					return
 				}
-				this.$http.get('/typechoUsers/userLogin', {
+				this.$http.get('/user/userLogin', {
 					params: {
 						params: JSON.stringify({
 							name: this.account,
@@ -283,12 +283,15 @@
 						this.getUserMeta()
 						uni.$u.toast('已连接主程序')
 						uni.$emit('login', true)
+						this.$store.commit('loginStatus')
 						//保存账号密码 用于持久登录
 						let account = {
 							name: this.account,
 							password: this.password
 						}
 						uni.setStorageSync('account', account)
+						console.log(uni.getStorageSync('account'))
+						
 						//
 						setTimeout(() => {
 							this.$Router.back(1)
@@ -301,7 +304,7 @@
 				})
 			},
 			getUserInfo(uid) {
-				this.$http.get('/typechoUsers/userInfo', {
+				this.$http.get('/user/userInfo', {
 					params: {
 						key: uid
 					}
@@ -313,7 +316,7 @@
 				})
 			},
 			getUserMeta() {
-				this.$http.get('/typechoUsers/userData', {
+				this.$http.get('/user/userData', {
 					params: {
 						token: this.$store.state.hasLogin ? uni.getStorageSync('token') : ''
 					}
@@ -349,7 +352,7 @@
 					uni.$u.toast('邀请码不可为空')
 					return;
 				}
-				this.$http.get('/typechoUsers/userRegister', {
+				this.$http.get('/user/userRegister', {
 					params: {
 						params: JSON.stringify({
 							name: this.username,
@@ -374,7 +377,7 @@
 					return;
 				}
 				if (this.$refs.uCode.canGetCode) {
-					this.$http.get('/typechoUsers/RegSendCode', {
+					this.$http.get('/user/RegSendCode', {
 						params: {
 							params: JSON.stringify({
 								mail: this.email

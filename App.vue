@@ -4,6 +4,9 @@
 	} from 'vuex';
 	import config from '@/config/config.js'
 	import silenceUpdate from '@/uni_modules/rt-uni-update/js_sdk/silence-update.js' //引入静默更新
+	import {
+		http
+	} from '@/utils/luch-request/http.js'
 	export default {
 		onLaunch: function() {
 			console.log('App Launch')
@@ -13,6 +16,7 @@
 				this.$store.commit('setUser', uni.getStorageSync('user'));
 				this.$store.commit('setUserMeta', uni.getStorageSync('userMeta'));
 				this.$store.commit('loginStatus');
+				this.getNoticeNum()
 				//检测登录状态
 				setTimeout(() => {
 					this.checkStstus()
@@ -35,20 +39,39 @@
 		methods: {
 			...mapMutations(['setToken', 'setUser', 'setUserMeta']),
 			checkStstus() {
-				this.$http.post('/typechoUsers/userStatus').then(res => {
+				http.get('/user/userStatus', {
+					params: {
+						token: this.$store.state.hasLogin ? uni.getStorageSync('token') : ''
+					}
+				}).then(res => {
 					if (!res.data.code) {
 						//状态不通过重新登录
 						this.login()
 					}
 				})
 			},
+			getNoticeNum() {
+				http.get('/user/unreadNum', {
+					params: {
+						token: this.$store.state.hasLogin ? uni.getStorageSync('token') : ''
+					}
+				}).then(res => {
+					if (res.data.code) {
+						this.$store.commit('setNoticeNum', res.data.data)
+					}
+				})
+			},
 			login() {
 				let account = uni.getStorageSync('account')
+				console.log(account,'账号信息')
 				if (!account) return;
-				this.$http.post('/typechoUsers/userLogin', {
-					params: JSON.stringify({
-						...account
-					})
+				http.get('/user/userLogin', {
+					params: {
+						params: {
+							name: account.name,
+							password: account.password
+						}
+					}
 				}).then(res => {
 					console.log(res)
 					if (res.data.code) {
@@ -56,9 +79,6 @@
 						this.getUserInfo(res.data.data.uid);
 						this.getUserMeta()
 						uni.$emit('login', true)
-						setTimeout(() => {
-							this.$Router.back(1)
-						}, 2000)
 					} else {
 						this.$Router.push({
 							path: '/pages/user/login'
@@ -70,7 +90,7 @@
 				})
 			},
 			getUserInfo(uid) {
-				this.$http.get('/typechoUsers/userInfo', {
+				http.get('/user/userInfo', {
 					params: {
 						key: uid
 					}
@@ -82,19 +102,18 @@
 				})
 			},
 			getUserMeta() {
-				this.$http.post('/typechoUsers/userData').then(res => {
+				http.post('/user/userData').then(res => {
 					if (res.data.code) {
 						this.setUserMeta(res.data.data)
 					}
 				})
 			},
 			getAppData() {
-				this.$http.get('/system/app', {
+				http.get('/system/app', {
 					params: {
 						key: config.app
 					}
 				}).then(res => {
-					console.log(res)
 					this.$store.commit('setAppInfo', res.data.data)
 				})
 			},
@@ -130,7 +149,6 @@
 							data.edition_issue = res.data.data.issue
 
 							// 判断版本号
-							console.log(data)
 							if (Number(data.edition_number) > Number(inf.versionCode) && data
 								.edition_issue == 1) {
 								// 判断是否热更新
@@ -145,7 +163,7 @@
 												obj: JSON.stringify(data)
 											}
 										})
-									}, 3000)
+									}, 2000)
 
 								}
 							}
@@ -165,6 +183,13 @@
 		src: url('/static/font/moe.ttf');
 
 	}
+	@import 'animate.css';
+	@import "@/uni_modules/uview-ui/index.scss";
+	/*每个页面公共css */
+	/*引入等级图标*/
+	@import './static/font/level/level.css';
+	/*引入基础图标*/
+	@import './static/font/ess/ess.css';
 
 	body {
 		font-family: 'moe';
@@ -203,7 +228,5 @@
 		color: white;
 	}
 
-	@import 'animate.css';
-	@import "@/uni_modules/uview-ui/index.scss";
-	/*每个页面公共css */
+	
 </style>
