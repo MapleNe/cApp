@@ -8,23 +8,24 @@
 					<view slot="left" style="display:flex;align-items: center;">
 						<i class="ess icon-left_line" style="font-size: 60rpx;" @click="$Router.back(1)"></i>
 						<view style="margin-left: 40rpx;display: flex;align-items: center;"
-							@click="goProfile(article.authorId)" v-show="showNavAvatar">
+							@click="goProfile(article.authorId)" v-show="showNavAvatar" v-if="article">
 							<u-avatar :src="article && article.authorInfo && article.authorInfo.avatar" size="28"
 								customStyle="border:4rpx solid #85a3ff32"></u-avatar>
 							<text
-								style="font-weight: 600;font-size: 30rpx;margin-left: 20rpx;">{{article && article.authorInfo && article.authorInfo.name}}</text>
+								style="font-weight: 600;font-size: 30rpx;margin-left: 20rpx;">{{article && article.authorInfo.screenName?article.authorInfo.screenName:article.authorInfo.name}}</text>
 						</view>
 					</view>
 					<view slot="right">
 						<view v-show="showNavAvatar"
 							style="display: flex; align-items: center;border-radius: 50rpx;border:2rpx solid #85a3ff32;padding: 0rpx 16rpx;line-height: 1;">
-							<u-row customStyle="margin-right:20rpx;" @click="follow(article.authorId)">
+							<u-row customStyle="margin-right:20rpx;"
+								@click="article.authorInfo.isFollow?showFollow = true:follow(article.authorId)">
 								<i class="ess icon-add_line" style="font-size: 30rpx;font-weight: 600;"
-									:style="{color:article && article.authorInfo &&article.authorInfo.isfollow?'':'#85a3ff'}"
-									v-if="article && article.authorInfo &&!article.authorInfo.isfollow"></i>
+									:style="{color:article && article.authorInfo &&article.authorInfo.isFollow?'':'#85a3ff'}"
+									v-if="article && article.authorInfo &&!article.authorInfo.isFollow"></i>
 
 								<text style="font-size: 26rpx;margin-left: 10rpx;padding-right:20rpx;font-weight: 600;"
-									:style="{color:article && article.authorInfo && article.authorInfo.isfollow?'':'#85a3ff'}">{{article && article.authorInfo && article.authorInfo.isfollow?'已关注':'关注'}}</text>
+									:style="{color:article && article.authorInfo && article.authorInfo.isFollow?'':'#85a3ff'}">{{article && article.authorInfo && article.authorInfo.isFollow?'已关注':'关注'}}</text>
 							</u-row>
 							<view>
 								<i class="ess icon-more_1_line" style="font-size: 60rpx;" @click="showMore = true"></i>
@@ -36,7 +37,8 @@
 				</u-navbar>
 			</template>
 			<view style="padding: 10rpx 30rpx 30rpx 30rpx;" v-if="article" @touchend="touchEnd" @touchmove="touchMove">
-				<articleHeader :data="article" @follow="follow($event)"></articleHeader>
+				<articleHeader :data="article" @follow="article.authorInfo.isFollow?showFollow = true:follow($event)">
+				</articleHeader>
 				<articleContent :data="article" :autoPreview="isScroll" @ready="loading = false" @hideTap="hideTap">
 				</articleContent>
 				<articleFooter :data="article"></articleFooter>
@@ -110,14 +112,14 @@
 				<block v-for="(item,index) in comments" v-if="comments">
 					<view style="margin:10rpx 0">
 						<comment :data="item" @subComment="subComment = $event;showSub =true"
-							@reply="pid = $event.coid;showComment =true" :article="article"></comment>
+							@reply="pid = $event.id;showComment =true" :article="article"></comment>
 					</view>
 				</block>
 			</view>
 			<template #bottom>
 				<u-row customStyle="padding:10rpx 20rpx;border-top:#85a3ff1e solid 1rpx" justify="space-between">
 					<u-col span="6">
-						<u-row customStyle="padding:14rpx 14rpx;border-radius: 50rpx;background:#85a3ff1e"
+						<u-row customStyle="padding:14rpx 14rpx;border-radius: 50rpx;background: #85a3ff0a;"
 							class="u-info" @click="showComment = true">
 							<u-icon name="edit-pen" size="20"></u-icon>
 							<text style="margin-left:10rpx;font-size: 28rpx;">说点什么</text>
@@ -131,7 +133,7 @@
 								<u-text text="发电" size="12"></u-text>
 							</view>
 							<view style="display: flex; flex-direction: column;align-items: center;"
-								@click="$u.throttle(btnTap('mark'),1000,true)">
+								@click="$u.throttle(mark(),1000,true)">
 								<i class="ess icon-star_line" style="font-size: 44rpx;"
 									:style="{color:article && article.isMark?'#85a3ff':''}"
 									:class="{'animate__animated animate__pulse':article && article.isMark}"></i>
@@ -140,7 +142,7 @@
 							</view>
 
 							<view style="display: flex; flex-direction: column;align-items: center;"
-								@click="$u.throttle(btnTap('likes'),1000,true)">
+								@click="$u.throttle(like(),1000,true)">
 								<i class="ess icon-thumb_up_2_line" style="font-size: 44rpx;"
 									:style="{color:article && article.isLike?'#85a3ff':''}"
 									:class="{'animate__animated animate__pulse':article && article.isLike}"></i>
@@ -158,7 +160,7 @@
 			:customStyle="{transform: `translateY(${-keyboardHeight+'px'})`,transition:'transform 0.3s ease',padding:30+'rpx'}">
 			<editor id="editor" :adjust-position="false" :show-img-size="false" :show-img-resize="false"
 				:show-img-toolbar="false" @ready="onEditorReady" placeholder="说点什么"
-				style="background: #85a3ff1e;height: auto;min-height: 60px;max-height: 100px;border-radius: 20rpx;padding: 8rpx 16rpx;">
+				style="background: #85a3ff0a;height: auto;min-height: 60px;max-height: 100px;border-radius: 20rpx;padding: 8rpx 16rpx;">
 			</editor>
 			<u-row customStyle="margin-top:20rpx" justify="space-between">
 				<u-col span="2">
@@ -265,7 +267,7 @@
 							<text style="margin-left:20rpx">通过系统分享</text>
 						</u-row>
 						<view
-							v-if="article&& article.authorId == $store.state.userInfo.uid|| $store.state.userInfo.groupKey =='administrator'">
+							v-if="article&& article.authorId == $store.state.userInfo.uid|| $store.state.userInfo.group =='administrator'">
 							<u-row customStyle="margin-bottom: 30rpx;" @click="goEdit()">
 								<i class="ess icon-edit_line" style="font-size: 40rpx;"></i>
 								<text style="margin-left:20rpx">编辑</text>
@@ -280,7 +282,8 @@
 					</view>
 				</view>
 			</view>
-			<u-popup :show="showDelete" :round="10" mode="center" @close="showDelete = false" customStyle="width:500rpx">
+			<u-popup :show="showDelete" :round="10" mode="center" @close="showDelete = false"
+				customStyle="width:500rpx">
 				<view
 					style="display: flex;flex-direction: column;align-items: center;justify-content: center;padding: 50rpx;">
 					<text style="font-size: 34rpx;">提示</text>
@@ -321,7 +324,22 @@
 				</u-row>
 			</view>
 		</u-popup>
-		
+		<u-popup :show="showFollow" :round="10" mode="center" @close="showFollow = false" customStyle="width:500rpx">
+			<view
+				style="display: flex;flex-direction: column;align-items: center;justify-content: center;padding: 50rpx;">
+				<text style="font-size: 34rpx;">提示</text>
+				<view style="margin-top:30rpx">
+					<text>是否取消关注？</text>
+				</view>
+				<u-row customStyle="margin-top: 60rpx;flex:1;width:100%" justify="space-between">
+					<u-button plain color="#85a3ff" customStyle="height:60rpx;margin-right:10rpx" shape="circle"
+						@click="showFollow = false">取消</u-button>
+					<u-button color="#85a3ff" customStyle="height:60rpx;margin-left:10rpx" shape="circle"
+						@click="follow(article.authorId)">确定</u-button>
+				</u-row>
+			</view>
+		</u-popup>
+
 	</z-paging-swiper>
 </template>
 
@@ -350,6 +368,7 @@
 		data() {
 			return {
 				showDelete: false,
+				showFollow: false,
 				isReply: false,
 				editorCtx: null,
 				percentage: 30,
@@ -384,10 +403,10 @@
 				showSub: false,
 				orderList: [{
 						name: '全部评论',
-						order: ''
+						order: 'likes desc,created desc'
 					}, {
 						name: '点赞最多',
-						order: 'likes'
+						order: 'likes desc'
 					},
 					{
 						name: '最新',
@@ -489,16 +508,12 @@
 			getData(id) {
 				this.$http.get('/article/info', {
 					params: {
-						key: id ? id : this.cid,
-						isMd: 1,
-						uid: this.$store.state.hasLogin ? this.$store.state.userInfo.uid : '',
-						token: uni.getStorageSync('token')
-					}
+						id: id ? id : this.cid,
+					},
 				}).then(res => {
-					console.log(res)
 					if (res.statusCode == 200) {
-						this.article = res.data
-						this.article.text = res.data && this.replaceEmoji(res.data.text)
+						this.article = res.data.data
+						this.article.text = res.data.data && this.replaceEmoji(res.data.data.text)
 					}
 				})
 			},
@@ -566,23 +581,20 @@
 				let params = {
 					page,
 					limit,
-					searchParams: JSON.stringify({
-						type: 'comment',
-						cid: this.cid,
-						parent: 0,
-						authorId: order.name == '只看楼主' ? this.article.authorId : null
-					}),
+					all: 0,
+					parent: 0,
+					id: this.cid,
 					order: order.order
 				}
-
 				if (order.name == '只看楼主') {
 					params.order = null
 				}
-				this.$http.get('/comments/commentsList', {
+				this.$http.get('/comments/list', {
 					params
 				}).then(res => {
-					if (res.statusCode == 200) {
-						this.$refs.comments.complete(res.data.data)
+					console.log(res)
+					if (res.data.code == 200) {
+						this.$refs.comments.complete(res.data.data.data)
 					}
 				}).catch(err => {
 					this.$refs.comments.complete(false)
@@ -596,25 +608,26 @@
 							function(match, alt) {
 								return `[${alt}]`;
 							});
-						console.log(res.text, this.commentText.length)
 						if (res.text.length < 2) {
 							uni.$u.toast('再多说点吧~')
 							return;
 						};
 
-						let params = JSON.stringify(params = {
-							cid: this.cid,
-							ownerId: this.article.authorId,
+						let params = {
+							id: this.article.cid,
 							parent: this.pid ? this.pid : 0,
-							allParent: this.pid ? this.pid : 0,
+							all: this.pid ? this.pid : 0,
 							text: this.commentText,
 							images: this.images
-						})
+						}
+						console.log(params)
 						this.isReply = true
-						this.$http.post('/comments/commentsAdd', {
-							params
+						this.$http.post('/comments/add', {
+							...params
 						}).then(res => {
-							if (res.data.code) {
+							console.log(res)
+
+							if (res.data.code == 200) {
 								uni.$u.toast('已发送~')
 								this.commentText = null
 								this.showComment = false
@@ -626,6 +639,7 @@
 							}
 							this.isReply = false
 						}).catch(err => {
+							console.log(err)
 							this.isReply = false
 						})
 					}
@@ -648,43 +662,40 @@
 						return ''
 					}).replace(/\|</g, '<').replace(/>\|/g, '>').replace(/【(回复|付费)查看：([^】]+)】/g, (match, type,
 						content) => {
-						return `<a style="text-decoration:unset;color:#85a3ff;border:#85a3ff dashed 1px;border-radius:10px;text-align:center;margin:10px 0;display:flex;flex:1;padding:20px;justify-content:center" data-type="${type}">
+						let html = ''
+
+						html += `<a style="text-decoration:unset;color:#85a3ff;border:#85a3ff dashed 1px;border-radius:10px;text-align:center;margin:10px 0;display:flex;flex:1;padding:20px;justify-content:center" data-type="${type}">
 						${type}内容，${type}后查看
-						</a>`;
+						</a>`
+						if (type == "付费") {
+							html += `<div style="position:absolute;bottom:10px;right:0;border-radius:5px 0 5px 0;color:white;background:#a385ff;padding:0 8px;font-size:12px !important;display:flex">
+							<div><i class="ess icon-coin_line" style="font-size:12px"></div>
+							<p style="font-size:12px;margin-left:2px">${this.article.price>0?this.article.price:'免费'}</p>
+							</div>`
+						}
+						return html;
 					})
 
 				}
 
 			},
-			btnTap(type, num) {
-
-				this.$http.post('/userlog/addLog', {
-					params: JSON.stringify({
-						type,
-						cid: this.article.cid,
-						num,
-					})
+			like() {
+				this.$http.post('/article/like', {
+					id: this.article.cid
 				}).then(res => {
-					console.log(res)
-					if (res.data.code) {
-						uni.$u.toast(type == 'likes' ? '点赞' + res.data.msg : res.data.msg)
-						switch (type) {
-							case 'likes':
-								this.article.isLike = !this.article.isLike
-								break;
-							case 'mark':
-								this.article.isMark = !this.article.isMark
-								break;
-							case 'reward':
-								uni.$u.toast('投喂' + res.data.msg)
-								setTimeout(() => {
-									this.$refs.reward.close()
-								}, 500)
-							default:
-								break;
-						}
-					} else {
+					if (res.data.code == 200) {
 						uni.$u.toast(res.data.msg)
+						this.article.isLike = !this.article.isLike
+					}
+				})
+			},
+			mark() {
+				this.$http.post('/article/mark', {
+					id: this.article.cid
+				}).then(res => {
+					if (res.data.code == 200) {
+						uni.$u.toast(res.data.msg)
+						this.article.isMark = !this.article.isMark
 					}
 				})
 			},
@@ -726,10 +737,13 @@
 					return;
 				};
 				this.$http.post('/user/follow', {
-					touid: id,
+					id
 				}).then(res => {
+					if (res.data.code == 200) {
+						this.article.authorInfo.isFollow = !this.article.authorInfo.isFollow
+					}
+					this.showFollow = false;
 					uni.$u.toast(res.data.msg)
-					this.article.authorInfo.isfollow = !this.article.authorInfo.isfollow
 				})
 			},
 			onEditorReady() {
@@ -829,8 +843,8 @@
 				else this.showComment = true;
 			},
 			buyHide() {
-				this.$http.post('/article/buyHide', {
-					cid: this.article.cid
+				this.$http.post('/article/buy', {
+					id: this.article.cid
 				}).then(res => {
 					if (res.data.code) {
 						uni.$u.toast(res.data.msg)
@@ -841,14 +855,14 @@
 					}
 				})
 			},
-			deleteArticle(){
-				this.$http.post('/article/articleDelete',{
-					key:this.article.cid
-				}).then(res=>{
-					if(res.data.code){
+			deleteArticle() {
+				this.$http.post('/article/delete', {
+					id: this.article.cid
+				}).then(res => {
+					if (res.data.code == 200) {
 						this.showDelete = false
 						uni.$u.toast(res.data.msg)
-						setTimeout(()=>{
+						setTimeout(() => {
 							this.$Router.back()
 						})
 					}

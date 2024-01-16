@@ -32,8 +32,9 @@
 				<u-gap></u-gap>
 				<view v-if="config && config.isEmail">
 					<u-row customStyle="border-bottom:1rpx solid #dadbde">
-						<u--input placeholder="验证码" type="number" prefixIcon="fingerprint" prefixIconStyle="font-size:40rpx"
-							customStyle="padding:15rpx 0 0 0" border="none" v-model="code">
+						<u--input placeholder="验证码" type="number" prefixIcon="fingerprint"
+							prefixIconStyle="font-size:40rpx" customStyle="padding:15rpx 0 0 0" border="none"
+							v-model="code">
 						</u--input>
 						<view>
 							<u-code ref="uCode" @change="codeChange" seconds="120"></u-code>
@@ -154,10 +155,10 @@
 				password2: '',
 				email: '',
 				code: '',
-				inviteCode:'',
+				inviteCode: '',
 				isLogin: true,
 				isForget: false,
-				tips: '12312',
+				tips: '',
 				accept: false,
 				loginBtn: [{
 						provider: 'weixin',
@@ -185,29 +186,11 @@
 		methods: {
 			...mapMutations(['setToken', 'setUser', 'setUserMeta']),
 			codeChange(text) {
-
 				this.tips = text
 			},
-			// getCode() {
-
-			// 	if (this.$refs.uCode.canGetCode) {
-			// 		this.$http.get('/user/RegSendCode', {
-			// 			params: {
-			// 				params: JSON.stringify({
-			// 					mail: this.account
-			// 				})
-			// 			}
-
-			// 		}).then(res => {
-			// 			console.log(res)
-			// 			this.$refs.uCode.start();
-			// 		})
-			// 	}
-			// },
 			getConfig() {
 				this.$http.get('/user/regConfig').then(res => {
-					console.log(res)
-					if (res.data.code) {
+					if (res.data.code == 200) {
 						this.config = res.data.data
 					}
 				})
@@ -218,14 +201,14 @@
 					return;
 				}
 				if (this.$refs.uCode1.canGetCode) {
-					this.$http.get('/user/SendCode', {
+					this.$http.get('/user/resetPassword', {
 						params: {
-							params: JSON.stringify({
-								name: this.account
-							}),
+							account: this.account,
+							password: this.password,
+							code: this.code,
 						}
 					}).then(res => {
-						if (res.data.code) {
+						if (res.data.code == 200) {
 							this.$refs.uCode1.start();
 						}
 						uni.$u.toast(res.data.msg)
@@ -238,16 +221,18 @@
 					uni.$u.toast('请同意协议')
 					return;
 				}
-				this.$http.get('/user/userFoget', {
+				this.$http.get('/user/resetPassword', {
 					params: {
-						params: JSON.stringify({
-							name: this.account,
-							password: this.password,
-							code: this.code
-						}),
+						account: this.account,
+						password: this.password,
+						code: this.code
 					}
 				}).then(res => {
-					if (res.data.code) {
+					if (res.data.code == 200) {
+						if (this.code == null && !this.code) {
+							uni.$u.toast(res.data.msg)
+							return
+						}
 						uni.$u.toast('已重置密码，即将自动登录')
 						setTimeout(() => {
 							this.login()
@@ -268,20 +253,16 @@
 					uni.$u.toast('请同意协议')
 					return
 				}
-				this.$http.get('/user/userLogin', {
+				this.$http.get('/user/login', {
 					params: {
-						params: JSON.stringify({
-							name: this.account,
-							password: this.password
-						}),
+						account: this.account,
+						password: this.password,
 					}
 				}).then(res => {
-					console.log(res)
-					if (res.data.code) {
+					if (res.data.code == 200) {
 						this.setToken(res.data.data.token);
 						this.getUserInfo(res.data.data.uid);
 						this.getUserMeta()
-						uni.$u.toast('已连接主程序')
 						uni.$emit('login', true)
 						this.$store.commit('loginStatus')
 						//保存账号密码 用于持久登录
@@ -290,15 +271,11 @@
 							password: this.password
 						}
 						uni.setStorageSync('account', account)
-						console.log(uni.getStorageSync('account'))
-						
-						//
 						setTimeout(() => {
 							this.$Router.back(1)
 						}, 2000)
-					} else {
-						uni.$u.toast(res.data.msg)
-					}
+					} 
+					uni.$u.toast(res.data.msg)
 				}).catch(err => {
 					console.log(err)
 				})
@@ -306,22 +283,17 @@
 			getUserInfo(uid) {
 				this.$http.get('/user/userInfo', {
 					params: {
-						key: uid
+						id: uid
 					}
 				}).then(res => {
-					console.log(res)
-					if (res.data.code) {
+					if (res.data.code == 200) {
 						this.setUser(res.data.data);
 					}
 				})
 			},
 			getUserMeta() {
-				this.$http.get('/user/userData', {
-					params: {
-						token: this.$store.state.hasLogin ? uni.getStorageSync('token') : ''
-					}
-				}).then(res => {
-					if (res.data.code) {
+				this.$http.get('/user/userData', {}).then(res => {
+					if (res.data.code == 200) {
 						this.setUserMeta(res.data.data)
 					}
 				})
@@ -331,7 +303,7 @@
 					uni.$u.toast('用户名为空')
 					return;
 				}
-				if(!this.email.length){
+				if (!this.email.length) {
 					uni.$u.toast('请填写邮箱')
 					return;
 				}
@@ -348,18 +320,17 @@
 					uni.$u.toast('验证码错误')
 					return;
 				}
-				if(this.config.isInvite && !this.inviteCode.length){
+				if (this.config.isInvite && !this.inviteCode.length) {
 					uni.$u.toast('邀请码不可为空')
 					return;
 				}
-				this.$http.get('/user/userRegister', {
+				this.$http.get('/user/register', {
 					params: {
-						params: JSON.stringify({
-							name: this.username,
-							password: this.password,
-							mail: this.email,
-							code: this.code,
-						}),
+						account: this.username,
+						password: this.password,
+						mail: this.email,
+						code: this.code,
+						inviteCode: this.inviteCode
 					}
 				}).then(res => {
 					if (res.data.code) {
@@ -377,11 +348,9 @@
 					return;
 				}
 				if (this.$refs.uCode.canGetCode) {
-					this.$http.get('/user/RegSendCode', {
+					this.$http.get('/user/regCodeSend', {
 						params: {
-							params: JSON.stringify({
-								mail: this.email
-							}),
+							mail: this.email
 						}
 					}).then(res => {
 						if (res.statusCode == 200) {

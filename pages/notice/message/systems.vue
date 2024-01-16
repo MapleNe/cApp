@@ -43,7 +43,7 @@
 					type: 'system'
 				}).then(res => {
 					console.log(res)
-					this.$refs.paging.complete(res.data.data)
+					this.$refs.paging.complete(res.data.data.data)
 					setTimeout(() => {
 						this.loading = false
 					}, 500)
@@ -70,7 +70,7 @@
 				})
 			},
 			clearNotice() {
-				this.$http.post('/user/setRead', {
+				this.$http.post('/user/clearNum', {
 					type: 'system'
 				}).then(res => {
 					console.log(res)

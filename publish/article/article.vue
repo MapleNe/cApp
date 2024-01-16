@@ -10,11 +10,13 @@
 			<view slot="right">
 				<view
 					style="display: flex;align-items: center;background: #85a3ff; border-radius: 50rpx;padding: 4rpx 16rpx;color: white;font-size: 28rpx;">
-					<view style="border-radius: 50rpx 0 0 50rpx;margin-right: 10rpx;" hover-class="button_hover" @click="showDraft = true">
+					<view style="border-radius: 50rpx 0 0 50rpx;margin-right: 10rpx;" hover-class="button_hover"
+						@click="showDraft = true">
 						<text>草稿箱</text>
 					</view>
-					<view style="border-radius: 50rpx 0 0 50rpx;margin-left: 10rpx;" hover-class="button_hover" @click="save()">
-						<text>发布</text>
+					<view style="border-radius: 50rpx 0 0 50rpx;margin-left: 10rpx;" hover-class="button_hover"
+						@click="update?updateArticle(): save()">
+						<text>{{update?'更新':'发布'}}</text>
 					</view>
 				</view>
 			</view>
@@ -23,16 +25,17 @@
 			<u-input v-model="article.title" placeholder="标题 (必填)" border="none"
 				customStyle="padding-bottom:10rpx;border-bottom:2rpx solid #f1f1f1"></u-input>
 		</view>
+		<!--  -->
 		<editor :adjust-position="false" placeholder="灵感迸发" id="editor" @ready="onEditorReady"
-			style="width: 100%;padding:10rpx 30rpx 0rpx 30rpx;"
-			:style="{height:editorHeight - keyboardHeight - toolbarHeight - 4 -(showPanel?panelHeight:0) +'px'}"
+			style="width: 100%;padding:10rpx 30rpx 10rpx 30rpx;"
+			:style="{height:editorHeight - keyboardHeight - toolbarHeight - 4 -(showPanel?panelHeight:0) +'px',minHeight:0+'px'}"
 			@statuschange="statuschange">
 		</editor>
 		<view id="toolbar" style="background: #fff;padding: 10rpx 30rpx; 0rpx 30rpx">
 			<u-row justify="space-between" @click="showCategory = true">
 				<text>选择发布位置</text>
 				<u-row>
-					<text>{{article.category.name}}</text>
+					<text>{{ article && article.category && article.category.name}}</text>
 					<u-icon name="arrow-right" color="#999"></u-icon>
 				</u-row>
 			</u-row>
@@ -55,7 +58,6 @@
 					</scroll-view>
 				</u-row>
 			</view>
-
 			<view style="padding-bottom: 20rpx;">
 				<u-row justify="space-between">
 					<u-row justify="space-between" customStyle="flex:1">
@@ -70,8 +72,6 @@
 					</view>
 				</u-row>
 			</view>
-			<!-- 视频处理 -->
-			<view style="display: none;" :prop="videoPath" :change:prop="capture.captures"></view>
 			<view v-if="showPanel" :style="{height:panelHeight+'px'}">
 				<!-- 表情 -->
 				<view v-show="itemName =='emoji'" style="height: 100%;">
@@ -152,7 +152,7 @@
 				</view>
 
 				<!-- 设置 -->
-				<view v-show="itemName=='opt'">
+				<view v-show="itemName=='setting'">
 					<u-row justify="space-between">
 						<u-row customStyle="flex-direction:column" justify="start" align="top">
 							<text style="font-size: 32rpx;font-weight: bold;">创作声明</text>
@@ -172,7 +172,10 @@
 					</u-row>
 				</view>
 			</view>
+			<!-- 视频处理 -->
+			<view style="display: none;" :prop="videoPath" :change:prop="capture.captures"></view>
 		</view>
+
 		<!-- 组件 -->
 		<!-- 分类 -->
 		<u-popup mode="right" :show="showCategory" @close="showCategory = false">
@@ -468,34 +471,35 @@
 			getCategory() {
 				this.$http.get('/category/list', {
 					params: {
-						searchParams: JSON.stringify({
-							type: 'category',
-
-						}),
+						page: 1,
+						limit: 50,
+						params: JSON.stringify({
+							type: 'category'
+						})
 					}
 				}).then(res => {
-					if (res.data.code) {
-
-						for (let i in res.data.data) {
-							if (res.data.data[i].mid == 1) this.article.category = res.data.data[i];
+					console.log(res)
+					if (res.data.code == 200) {
+						for (let i in res.data.data.data) {
+							if (res.data.data.data[i].mid == 1) this.article.category = res.data.data.data[i];
 						}
-						this.category = res.data.data
+						this.category = res.data.data.data
 					}
 				})
 			},
 			getTags() {
 				this.$http.get('/category/list', {
 					params: {
-						searchParams: JSON.stringify({
+						page: 1,
+						limit: 10,
+						params: JSON.stringify({
 							type: 'tag',
 						}),
 						order: 'count'
 					}
 				}).then(res => {
-
-					if (res.data.code) {
-						this.tags = res.data.data
-
+					if (res.data.code==200) {
+						this.tags = res.data.data.data
 					}
 				})
 			},
@@ -513,35 +517,37 @@
 			},
 
 			async chooseImage() {
-				// 重置进度条
-				this.percentage = 30;
+				this.percentage = 0; // 重置进度条
 				try {
 					const res = await uni.chooseImage({
 						count: 20
 					});
-					let loading = 100 / res.tempFilePaths.length - this.percentage
-					let count = res.tempFilePaths.length
-					this.showLoading = true
+					let increment = 100 / res.tempFilePaths.length; // 计算每张图片的上传进度增量
+					let count = res.tempFilePaths.length;
+
+					this.showLoading = true;
+
 					for (let i in res.tempFilePaths) {
 						let image = await this.upload(res.tempFilePaths[i]);
-						count--
-						this.percentage += loading
+						count--;
+						this.percentage += increment; // 增加上传进度
 						this.editorCtx.insertImage({
 							src: image,
-							alt: this.article.title ? this.article.title : 'Chikata'
+							alt: this.article.title ? this.article.title : 'IMAGE'
 						});
 					}
-					if (!count) {
+
+					if (count === 0) {
 						setTimeout(() => {
 							this.showLoading = false;
-						}, 200)
+						}, 200);
 					}
-					// 图片插入完成插入换行
+
 					this.editorCtx.insertText({
 						text: '\n'
 					});
 				} catch (error) {
-
+					console.error(error); // 打印错误信息到控制台
 				}
 			},
 			// 选择视频
@@ -550,11 +556,29 @@
 				this.percentage = 30;
 				uni.chooseVideo({
 					extension: ['mp4', 'avi', 'webm'],
-					compressed: true,
+					compressed: false,
 					success: (res) => {
-						this.videoPath = res.tempFilePath
-						this.videoInfo.width = res.width
-						this.videoInfo.height = res.width
+						uni.getVideoInfo({
+							src: res.tempFilePath,
+							success: (res) => {
+								this.videoInfo.width = res.width
+								this.videoInfo.height = res.width
+								this.videoInfo.orientation = res.orientation
+								this.videoInfo.bitrate = res.bitrate
+							}
+						})
+						let ratio = Math.sqrt((1920 * 1080) / (this.videoInfo.width * this.videoInfo.height));
+						let resolution = ratio >= 1 ? 1 : ratio;
+						let bitrate = this.videoInfo.bitrate > 4 * 1024 ? 4 * 1024 : this.videoInfo.bitrate;
+						uni.compressVideo({
+							src: res.tempFilePath,
+							bitrate,
+							resolution,
+							quality: 'medium',
+							success: (res) => {
+								this.videoPath = res.tempFilePath
+							}
+						})
 					}
 				})
 			},
@@ -589,7 +613,7 @@
 						name: 'file',
 					}).then(res => {
 						console.log(res)
-						if (res.data.code) {
+						if (res.data.code==200) {
 							resolve(res.data.data.url)
 						} else {
 							this.uploadErr.status = true
@@ -611,7 +635,7 @@
 						name: 'file',
 					}).then(res => {
 						console.log(res)
-						if (res.data.code) {
+						if (res.data.code==200) {
 							resolve(res.data.data.url)
 						} else {
 							this.uploadErr.status = true
@@ -645,30 +669,27 @@
 						this.$refs.publish.open();
 						let tags = this.article.tags.map(tag => tag.mid).join(',');
 						this.$http.post('/article/articleAdd', {
-							params: JSON.stringify({
-								title: this.article.title,
-								text: this.article.text,
-								category: this.article.category.mid,
-								mid: this.article.category.mid,
-								tag: tags,
-								opt: JSON.stringify(this.article.opt),
-								price: this.article.price,
-								discount: this.article.discount
-							}),
+							title: this.article.title,
 							text: this.article.text,
+							category: this.article.category.mid,
+							mid: this.article.category.mid,
+							tag: tags,
+							opt: JSON.stringify(this.article.opt),
+							price: this.article.price,
+							discount: this.article.discount,
 						}).then(res => {
-							if (res.data.code) {
+							if (res.data.code==200) {
 								setTimeout(() => {
 									this.$refs.publish.close();
-									uni.$u.toast(res.data.msg);
+									
 									setTimeout(() => {
 										this.$Router.back(1);
 									}, 800);
 								}, 1500);
 							} else {
-								uni.$u.toast(res.data.msg);
 								this.$refs.publish.close();
 							}
+							uni.$u.toast(res.data.msg);
 						});
 					}
 				});
@@ -767,6 +788,7 @@
 						alt: `src=${this.videoInfo.url}|poster=${poster}|type=video`,
 						width: '100%',
 						height: '200px',
+						extClass: 'imageCover',
 						data: {
 							type: 'video',
 							poster: poster,
@@ -824,22 +846,21 @@
 			getContentInfo(id) {
 				this.$http.get('/article/info', {
 					params: {
-						key: id,
-						isMd: 1,
+						id,
 						token: this.$store.state.hasLogin ? uni.getStorageSync('token') : ''
-					}
+					},
+
 				}).then(res => {
-					console.log(res)
-					if (res.data) {
-						this.article.cid = res.data.cid
-						this.article.title = res.data.title
-						this.article.text = res.data.text
-						this.article.category = res.data.category[0] ? res.data.category[0] : this.category[0]
-						this.article.tags = res.data.tag
-						this.article.mid = res.data.mid
-						this.article.opt = res.data.opt
-						this.article.price = res.data.price
-						this.article.discount = res.data.discount
+					if (res.data.code == 200) {
+						this.article.cid = res.data.data.cid
+						this.article.title = res.data.data.title
+						this.article.text = res.data.data.text
+						this.article.category = res.data.data.category ? res.data.data.category : this.category[0]
+						this.article.tags = res.data.data.tag
+						this.article.mid = res.data.data.mid
+						this.article.opt = res.data.data.opt
+						this.article.price = res.data.data.price
+						this.article.discount = res.data.data.discount
 
 						this.editorCtx.getContents({
 							success: (res) => {
@@ -876,29 +897,25 @@
 						}
 						console.log(this.article)
 						let tags = this.article.tags.map(tag => tag.mid).join(',');
-						this.$http.post('/article/articleUpdate', {
-							params: JSON.stringify({
-								cid: this.article.cid,
-								title: this.article.title,
-								text: this.article.text,
-								category: this.article.category.mid ? this.article.category
-									.mid : this.article.mid,
-								mid: this.article.category.mid ? this.article.category.mid :
-									this.article.mid,
-								tag: tags,
-								price: this.article.price,
-								discount: this.article.discount,
-								opt: JSON.stringify(this.article.opt)
-							}),
-							isMd: 0,
+						this.$http.post('/article/update', {
+							id: this.article.cid,
+							title: this.article.title,
+							text: this.article.text,
+							category: this.article.category.mid ? this.article.category
+								.mid : this.article.category[0].mid,
+							mid: this.article.category.mid ? this.article.category.mid : this.article.category[0].mid,
+							tag: tags,
+							price: this.article.price,
+							discount: this.article.discount,
+							opt: JSON.stringify(this.article.opt)
 						}).then(res => {
-							console.log(res)
-							if (res.data.code) {
-								uni.$u.toast(res.data.msg)
+							if (res.data.code==200) {
+								
 								setTimeout(() => {
 									this.$Router.back(1)
 								}, 500)
 							}
+							uni.$u.toast(res.data.msg)
 						})
 					}
 				})
@@ -943,7 +960,7 @@
 				let duration = await this.getDuration(videoPath)
 				let list = []
 				for (let i = 0; i < 12; i++) {
-					const frame = await this.captureFrame(videoPath, duration / 1000 * i)
+					const frame = await this.captureFrame(videoPath, duration / 1000 * (3 * i))
 					list.push(frame)
 				}
 				this.$ownerInstance.callMethod('captureList', {
@@ -1009,16 +1026,10 @@
 
 
 <style lang="scss">
-	.panel {
-		transform: translateY(10vh);
-		transition: transform 0.3s ease;
-		background: #fff;
-
-	}
-
 	.ql-container ::v-deep .ql-blank::before {
 		font-style: normal;
 		color: #999;
+		min-height: 0rpx;
 	}
 
 	.ql-container ::v-deep img {
@@ -1029,5 +1040,12 @@
 
 	.button_hover {
 		opacity: 0.5;
+	}
+
+	.imageCover {
+		position: relative;
+		object-fit: cover;
+		width: 100%;
+		height: 200px;
 	}
 </style>

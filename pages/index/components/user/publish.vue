@@ -2,18 +2,24 @@
 	<view>
 		<z-paging @query="getData" v-model="article" ref="paging" :refresher-enabled="false" :scrollable="scroll"
 			style="margin-bottom: 60rpx;" :auto-hide-loading-after-first-loaded="false"
-			:auto-scroll-to-top-when-reload="false" :auto-clean-list-when-reload="false" use-cache	:cache-key="`user_publish`">
+			:auto-scroll-to-top-when-reload="false" :auto-clean-list-when-reload="false" use-cache
+			:cache-key="`user_publish`">
 			<block v-for="(item,index) in article">
-				<view style="margin: 30rpx;" @click="goArticle(item)">
-					<u-row align="bottom" customStyle="margin-bottom:20rpx">
-						<text style="font-size:40rpx;font-weight: 600;">{{$u.timeFormat(item.created,'dd')}}</text>
-						<text style="color: #999;margin-left: 10rpx;">{{$u.timeFormat(item.created,'mm')}}</text>
-						<view v-if="item.category&&item.category.length" style="color: #999;font-size: 26rpx;">
-							<text style="margin: 0 10rpx;">·</text>
-							<text>{{item.category[0].name}}</text>
-						</view>
+				<view style="margin: 30rpx;"  @tap.stop="item.type=='post'?goArticle(item):item.type=='photo'?goPhoto(item):goArticle(item)">
+					<u-row justify="space-between" customStyle="margin-bottom:20rpx">
+						<u-row align="bottom">
+							<text style="font-size:40rpx;font-weight: 600;">{{$u.timeFormat(item.created,'dd')}}</text>
+							<text style="color: #999;margin-left: 10rpx;">{{$u.timeFormat(item.created,'mm')}}</text>
+							<view v-if="item.category" style="color: #999;font-size: 26rpx;">
+								<text style="margin: 0 10rpx;">·</text>
+								<text>{{item.category.name}}</text>
+							</view>
+						</u-row>
+						<i class="ess icon-more_1_line" style="font-size: 60rpx;"
+							@click.stop="$emit('articleMenu',data)"></i>
 					</u-row>
-					<articleContent :data="item"></articleContent>
+					<article-photo :data="item" v-if="item.type=='photo'"></article-photo>
+					<article-content :data="item" v-else></article-content>
 					<articleFooter :data="item"></articleFooter>
 				</view>
 				<view style="border-bottom:1rpx #f7f7f7 solid"></view>
@@ -26,11 +32,13 @@
 	import articleHeader from '@/components/article/header.vue';
 	import articleContent from '@/components/article/content.vue';
 	import articleFooter from '@/components/article/footer.vue';
+	import articlePhoto from '@/components/article/photo.vue';
 	export default {
 		components: {
 			articleHeader,
 			articleContent,
-			articleFooter
+			articleFooter,
+			articlePhoto
 		},
 		name: 'publish',
 		props: {
@@ -60,20 +68,27 @@
 				this.$http.post('/article/articleList', {
 					page,
 					limit,
-					searchParams: JSON.stringify({
-						type: 'post',
+					params: JSON.stringify({
 						authorId: this.$store.state.userInfo.uid
 					}),
-					order: 'created desc'
+					order: 'created desc',
 
 				}).then(res => {
-					this.$refs.paging.complete(res.data.data)
+					this.$refs.paging.complete(res.data.data.data)
 				})
 			},
 			goArticle(data) {
 				uni.setStorageSync(`article_${data.cid}`, data)
 				this.$Router.push({
 					path: '/pages/article/article',
+					query: {
+						id: data.cid
+					}
+				})
+			},
+			goPhoto(data) {
+				this.$Router.push({
+					path: '/pages/article/photo',
 					query: {
 						id: data.cid
 					}

@@ -46,9 +46,9 @@
 									style="font-weight: 600;font-size: 34rpx;">{{userInfo && userInfo.screenName}}</text>
 								<uv-line-progress :height="4"
 									:activeColor="userInfo.level > 8 ? $level[Math.floor(userInfo.level/2)-1] : $level[userInfo.level-1]"
-									:percentage="100-((userInfo.nextExp - userInfo.experience) / userInfo.nextExp) * 100"
+									:percentage="100-((userInfo.nextLevel - userInfo.experience) / userInfo.nextExp) * 100"
 									:showText="false" style="position: absolute;bottom: 0;width: 100%;"
-									v-if="userInfo && userInfo.experience && userInfo.nextExp && userInfo.level">
+									v-if="userInfo && userInfo.experience && userInfo.nextLevel && userInfo.level">
 								</uv-line-progress>
 							</view>
 							<i @click="showLevel = true" v-if="userInfo.level"
@@ -75,19 +75,19 @@
 				</u-row>
 				<u-row justify="space-around" customStyle="margin-top:40rpx">
 					<view class="userMate">
-						<text style="font-size: 34rpx;font-weight: 600;">{{userMeta && userMeta.contentsNum}}</text>
+						<text style="font-size: 34rpx;font-weight: 600;">{{userMeta && userMeta.articles}}</text>
 						<text>帖子</text>
 					</view>
 					<view class="userMate">
-						<text style="font-size: 34rpx;font-weight: 600;">{{userMeta && userMeta.followNum}}</text>
+						<text style="font-size: 34rpx;font-weight: 600;">{{userMeta && userMeta.follows}}</text>
 						<text>关注</text>
 					</view>
 					<view class="userMate">
-						<text style="font-size: 34rpx;font-weight: 600;">{{userMeta && userMeta.fanNum}}</text>
+						<text style="font-size: 34rpx;font-weight: 600;">{{userMeta && userMeta.fans}}</text>
 						<text>粉丝</text>
 					</view>
 					<view class="userMate">
-						<text style="font-size: 34rpx;font-weight: 600;">{{userMeta && userMeta.commentsNum}}</text>
+						<text style="font-size: 34rpx;font-weight: 600;">{{userMeta && userMeta.comments}}</text>
 						<text>评论</text>
 					</view>
 				</u-row>
@@ -118,7 +118,8 @@
 					<swiper style="height: 100vh;" :current="tabsIndex"
 						@animationfinish="tabsIndex = $event.detail.current" v-if="$store.state.hasLogin">
 						<swiper-item style="overflow: auto;">
-							<publish :isScroll="isScroll" :data="userInfo" ref="publish"></publish>
+							<publish :isScroll="isScroll" :data="userInfo" ref="publish"
+								@articleMenu="showArticleMenu = true"></publish>
 						</swiper-item>
 						<swiper-item style="overflow: auto;">
 							<comment :isScroll="isScroll" :data="userInfo" ref="comment"></comment>
@@ -147,22 +148,25 @@
 			</block>
 			<!-- 管理面板 -->
 			<view style="margin:20rpx 20rpx 0 20rpx; background: #fff;border-radius: 20rpx;"
-				v-if="userInfo && userInfo.groupKey =='administrator'">
+				v-if="userInfo && userInfo.group =='administrator'">
 				<u-row customStyle="padding:30rpx" @click="goPage('manage')">
 					<u-icon name="setting" size="24"></u-icon>
 					<text style="margin-left:20rpx;font-weight: 600;">管理面板</text>
 				</u-row>
 			</view>
-			<view style="position: fixed;bottom: 0;margin: 20rpx;background: #fff;border-radius: 20rpx; width: 65vw;">
-				<u-row justify="space-between" @click="goLogout">
-					<block v-for="(item,index) in static">
-						<u-row customStyle="padding:30rpx;flex-direction:column;align-items:center;">
-							<u-icon :name="item.icon" size="22" bold
-								customStyle="background:#eee;padding:15rpx;border-radius:500rpx"></u-icon>
-							<text style="font-size: 30rpx;color: #999;">{{item.name}}</text>
-						</u-row>
-					</block>
-				</u-row>
+			<view style="position: fixed;bottom: 0; width: 70vw;">
+				<view style="margin: 20rpx;background: #fff;border-radius: 20rpx;">
+					<u-row justify="space-between">
+						<block v-for="(item,index) in static" :key="index">
+							<u-row customStyle="padding:30rpx;flex-direction:column;align-items:center;"
+								@click="bottomTap(item)">
+								<u-icon :name="item.icon" size="22" bold
+									customStyle="background:#eee;padding:15rpx;border-radius:500rpx"></u-icon>
+								<text style="font-size: 30rpx;color: #999;">{{item.name}}</text>
+							</u-row>
+						</block>
+					</u-row>
+				</view>
 			</view>
 		</u-popup>
 		<l-clipper v-if="backgroundShow" :image-url="cropperBg"
@@ -198,6 +202,30 @@
 				</view>
 			</view>
 		</u-popup>
+
+		<!-- 文章菜单 -->
+		<u-popup :show="showArticleMenu" round="10" @close="showArticleMenu = false" closeable>
+			<view style="margin: 30rpx;text-align: center;">
+				<text>帖子管理</text>
+				<view style="display: flex;
+				flex-direction: column;">
+					<view style="margin-bottom:30rpx">
+						<u-row>
+							<i class="ess icon-edit_line" style="font-size: 40rpx;"></i>
+							<text style="margin-left:20rpx">编辑</text>
+						</u-row>
+					</view>
+					<view style="margin-bottom:30rpx">
+						<u-row style="color: red;">
+							<i class="ess icon-delete_2_line" style="font-size: 40rpx;"></i>
+							<text style="margin-left:20rpx">删除</text>
+						</u-row>
+					</view>
+				</view>
+
+			</view>
+		</u-popup>
+
 	</view>
 </template>
 
@@ -263,11 +291,6 @@
 						}
 					],
 					all: [{
-							name: '我的帖子',
-							icon: 'heart',
-							path: '',
-						},
-						{
 							name: '我的订单',
 							icon: 'heart',
 							path: 'orderList',
@@ -275,7 +298,7 @@
 						{
 							name: '我的小摊',
 							icon: 'heart',
-							path: '',
+							path: 'myProduct',
 						}
 					],
 					blance: [{
@@ -298,15 +321,18 @@
 				static: [{
 						name: '退出',
 						path: '',
+						type: 'logout',
 						icon: 'setting'
 					}, {
 						name: '反馈',
 						path: '',
+						type: '',
 						icon: 'file-text'
 					},
 					{
 						name: '客服',
 						path: '',
+						type: '',
 						icon: 'kefu-ermai'
 					},
 
@@ -355,13 +381,13 @@
 				opacity: 0,
 				allHeight: 0,
 				isScroll: false,
+				showArticleMenu: false,
 			}
 		},
 		computed: {
 			...mapState(['userInfo', 'userMeta'])
 		},
 		created() {
-			console.log(this.$store.hasLogin)
 			uni.$on('login', data => {
 				this.$store.commit('loginStatus')
 				this.isMounted = true
@@ -387,12 +413,12 @@
 				if (!uni.getStorageSync('token')) return;
 				this.$http.get('/user/userInfo', {
 					params: {
-						key: this.userInfo.uid,
-						token: this.$store.state.hasLogin ? uni.getStorageSync('token') : ''
-					}
+						id: this.userInfo.uid,
+					},
+
 				}).then(res => {
 					console.log(res)
-					if (res.data.code) {
+					if (res.data.code == 200) {
 						this.$store.commit('setUser', res.data.data)
 					}
 
@@ -401,12 +427,8 @@
 				})
 			},
 			getUserMeta() {
-				this.$http.get('/user/userData', {
-					params: {
-						token: this.$store.state.hasLogin ? uni.getStorageSync('token') : ''
-					}
-				}).then(res => {
-					if (res.data.code) {
+				this.$http.get('/user/userData', {}).then(res => {
+					if (res.data.code == 200) {
 						this.$store.commit('setUserMeta', res.data.data)
 					}
 				})
@@ -446,21 +468,18 @@
 					filePath: url,
 					name: 'file'
 				}).then(res => {
-					if (res.data.code) {
+					console.log(res)
+					if (res.data.code == 200) {
 						this.save(res.data.data.url)
 					}
 				})
 			},
 			save(url) {
-				this.$http.post('/user/userEdit', {
-					params: JSON.stringify({
-						uid: this.userInfo.uid,
-						name: this.userInfo.name,
-						userBg: url
-					})
+				this.$http.post('/user/update', {
+					background: url
 				}).then(res => {
 					console.log(res)
-					if (res.data.code) {
+					if (res.data.code == 200) {
 						this.getUserInfo()
 					}
 				})
@@ -482,19 +501,19 @@
 				if (scrollTop > 407) this.isScroll = true;
 				else this.isScroll = false;
 			},
+			bottomTap(data) {
+				switch (data.type) {
+					case 'logout':
+						this.goLogout();
+						break;
+					default:
+						break;
+				}
+			},
 			checkUp() {
-				this.$http.post('/userlog/addLog', {
-					params: JSON.stringify({
-						type: 'clock'
-					})
-				}).then(res => {
-					console.log(res)
-					if (res.data.code) {
-						uni.$u.toast('签到' + res.data.msg)
-					} else {
-						if (res.data.msg != '你的操作太频繁了') {
-							uni.$u.toast(res.data.msg)
-						}
+				this.$http.post('/user/sign').then(res => {
+					if (res.data.code == 200) {
+						uni.$u.toast(res.data.msg)
 					}
 				})
 			}

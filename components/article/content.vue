@@ -9,37 +9,40 @@
 					customStyle="background: #85a3ff1e;padding:4rpx;border-radius:10rpx"></u-icon>
 			</view>
 		</u-row>
+		
 		<uv-parse :content="replaceEmoji(data.text)" class="u-line-2"
 			style="overflow: hidden;white-space: normal;word-break: break-all;word-wrap: break-word;"
 			:previewImg="false" :showImgMenu="false"></uv-parse>
 		<!-- 三张图片以上才显示 -->
 		<view id="album" style="width: 100%;" v-if="data.images.length>=3">
 			<uv-album :urls="data.images" maxCount="6" borderRadius="15" :singleSize="elWidth*0.8"
-				singleMode="scaleToFill" :multipleSize="(elWidth-12)/3" v-if="data.images.length"></uv-album>
+				singleMode="scaleToFill" :multipleSize="elWidth" v-if="data.images.length" ></uv-album>
 		</view>
 		<!-- 一张图片 -->
 		<view v-if="data.images.length==1">
-			<image :src="data.images[0]" mode="aspectFill" style="width: 100%; height: 350rpx;border-radius: 20rpx;">
+			<!-- <u-image :src="data.images[0]" :mode="mode" width="100%" radius="10" height="200"></u-image> -->
+			<image :src="data.images[0]" :mode="mode" style="width: 100%; max-height: 400rpx;border-radius: 20rpx;background: #f7f7f7;"
+				@click.stop="picPreview(data.images,0)">
 			</image>
 		</view>
 		<!-- 两张图片 -->
 		<view v-if="data.images.length==2">
 			<u-row justify="space-between">
 				<u-col span="5.9">
-					<image mode="aspectFill" style="width: 100%;height: 280rpx;border-radius: 20rpx 0 0 20rpx;"
-						:src="data.images[0]">
+					<image mode="aspectFill" style="width: 100%;height: 300rpx;border-radius: 20rpx 0 0 20rpx;"
+						:src="data.images[0]" @click.stop="picPreview(data.images,0)">
 					</image>
 				</u-col>
 				<u-col span="5.9">
-					<image mode="aspectFill" style="width: 100%;height: 280rpx;border-radius: 0 20rpx 20rpx 0;"
-						:src="data.images[1]">
+					<image mode="aspectFill" style="width: 100%;height: 300rpx;border-radius: 0 20rpx 20rpx 0;"
+						:src="data.images[1]" @click.stop="picPreview(data.images,1)">
 					</image>
 				</u-col>
 			</u-row>
 		</view>
 
 
-		<view v-if="data.tag.length>0" style="display: flex;flex-wrap: wrap;margin-top: 20rpx;">
+		<view v-if="data.tag && data.tag.length>0" style="display: flex;flex-wrap: wrap;margin-top: 20rpx;">
 			<block v-for="(item,index) in data.tag" :key="index">
 				<view style="
 					font-size: 26rpx;
@@ -65,7 +68,6 @@
 			data: {
 				type: Object,
 				default: null,
-
 			}
 		},
 		computed: {
@@ -73,32 +75,49 @@
 		},
 		data() {
 			return {
-				elWidth: 333,
+				elWidth: uni.getStorageSync('albumWidth') ? (uni.getStorageSync('albumWidth') - 12) / 3 : 100,
+				mode: 'aspectFill'
 			}
 		},
-		onReady() {},
 		created() {
+			// 直接计算图片大小
 			if (this.data.images.length >= 3) {
+				if (uni.getStorageSync('albumWidth') > 0) {
+					this.elWidth = (uni.getStorageSync('albumWidth') - 12) / 3
+				}
 				this.$nextTick(() => {
 					this.getAlbumWidth();
 				}, 200)
 			}
-
-		},
-		mounted() {
-
+			this.getImageInfo()
 		},
 		methods: {
+			getImageInfo() {
+				if (this.data.images.length == 1) {
+					uni.getImageInfo({
+						src: this.data.images[0],
+						success: (res) => {
+							if (res.width < res.height) {
+								this.mode = 'heightFix'
+							}else{
+								this.mode = 'aspectFill'
+							}
+						}
+					})
+				}
+
+			},
 			getAlbumWidth() {
 				uni.createSelectorQuery().in(this).select('#album').boundingClientRect(data => {
-					if (data.width === 0) {
-						// 如果宽度为0，则重新获取
-						setTimeout(() => {
-							this.getAlbumWidth();
-						}, 200)
+					if (data.width == 0) {
+						// 如果宽度为0，直接使用本地存储的宽度 笨办法
+						if (uni.getStorageSync('albumWidth')) {
+							this.elWidth = (uni.getStorageSync('albumWidth') - 12) / 3
+						}
 					} else {
 						// 如果宽度不为0，保存宽度到 elWidth
-						this.elWidth = data.width;
+						this.elWidth = (data.width - 12) / 3;
+						uni.setStorageSync('albumWidth', data.width)
 					}
 				}).exec();
 			},
@@ -116,6 +135,12 @@
 
 				}).replace(/\|</g, '<').replace(/>\|/g, '>')
 			},
+			picPreview(urls, current) {
+				uni.previewImage({
+					urls,
+					current
+				})
+			}
 		}
 	}
 </script>

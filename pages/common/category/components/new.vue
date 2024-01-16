@@ -1,11 +1,15 @@
 <template>
 	<view>
 		<z-paging @query="getData" ref="paging" v-model="article" :auto-scroll-to-top-when-reload="false"
-			:auto-clean-list-when-reload="false" :use-page-scroll="!scroll" :refresher-enabled="false" use-cache	:cache-key="`category_new-${mid}`">
+			:auto-clean-list-when-reload="false" :use-page-scroll="!scroll" :refresher-enabled="false" use-cache
+			:cache-key="`category_new-${mid}`">
 			<block v-for="(item,index) in article" :key="index">
-				<view @tap.stop="goArticle(item)" style="margin:30rpx 30rpx 0rpx 30rpx;padding-bottom: 10rpx;">
-					<article-header :data="item"></article-header>
-					<article-content :data="item"></article-content>
+				<view @tap.stop="item.type=='post'?goArticle(item):item.type=='photo'?goPhoto(item):goArticle(item)"
+					style="margin:30rpx 30rpx 0rpx 30rpx;padding-bottom: 10rpx;">
+					<article-header :data="item" @follow="$refs.paging.reload()"
+						@menuTap="$emit('edit',$event)"></article-header>
+					<article-photo :data="item" v-if="item.type=='photo'"></article-photo>
+					<article-content :data="item" v-else></article-content>
 					<article-footer :data="item"></article-footer>
 				</view>
 				<view :style="`border-bottom:1rpx ${border} solid`"></view>
@@ -18,6 +22,7 @@
 	import articleHeader from '@/components/article/header.vue';
 	import articleContent from '@/components/article/content.vue';
 	import articleFooter from '@/components/article/footer.vue';
+	import articlePhoto from '@/components/article/photo.vue';
 	export default {
 		name: 'newArticle',
 		props: {
@@ -48,6 +53,7 @@
 			articleHeader,
 			articleContent,
 			articleFooter,
+			articlePhoto
 		},
 		data() {
 			return {
@@ -58,20 +64,19 @@
 		methods: {
 			getData(page, limit) {
 				this.$http.get('/article/articleList', {
-					params:{
+					params: {
 						page,
 						limit,
-						searchParams: JSON.stringify({
+						params: JSON.stringify({
 							mid: this.mid,
 						}),
 						order: 'created desc',
-						token: this.$store.state.hasLogin ? uni.getStorageSync('token') : ''
 					}
-					
+
 				}).then(res => {
 					console.log(res)
-					if (res.data.code) {
-						this.$refs.paging.complete(res.data.data)
+					if (res.data.code == 200) {
+						this.$refs.paging.complete(res.data.data.data)
 					}
 				})
 			},
@@ -79,6 +84,14 @@
 				uni.setStorageSync(`article_${data.cid}`, data)
 				this.$Router.push({
 					path: '/pages/article/article',
+					query: {
+						id: data.cid
+					}
+				})
+			},
+			goPhoto(data) {
+				this.$Router.push({
+					path: '/pages/article/photo',
 					query: {
 						id: data.cid
 					}

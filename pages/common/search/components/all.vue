@@ -6,12 +6,14 @@
 			</view>
 			<block v-for="(item,index) in article" :key="index">
 				<view style="margin: 30rpx;padding: 30rpx;background:#fff;border-radius: 20rpx;"
-					@click="goArticle(item)">
+					@tap.stop="item.type=='post'?goArticle(item):item.type=='photo'?goPhoto(item):goArticle(item)">
 					<view style="display: flex;flex-direction: column;">
 						<u-row justify="space-between" align="top">
 							<view class="u-line-2" style="display: flex;flex-direction: column;">
 								<text style="font-size: 36rpx;font-weight: 600;">{{item.title}}</text>
-								<uv-parse :showImgMenu="false" class="u-line-1" style="overflow-y: unset;overflow: hidden;" :content="replaceEmoji(item.text)"></uv-parse>
+								<uv-parse :showImgMenu="false" class="u-line-1"
+									style="overflow-y: unset;overflow: hidden;"
+									:content="replaceEmoji(item.text)"></uv-parse>
 							</view>
 							<image v-if="item.images&&item.images[0]"
 								:src="item.images&& item.images[0]?item.images[0]:'/static/login.png'"
@@ -75,28 +77,32 @@
 		},
 		methods: {
 			getData(page, limit) {
-				if(!this.key.length) return;
-				console.log(this.key)
+				if (!this.key.length) return;
 				this.$http.get('/article/articleList', {
 					params: {
 						page,
 						limit,
 						searchKey: this.key,
-						searchParams: JSON.stringify({
-							mid: this.categoryId ? this.categoryId : ''
-						})
 					}
 				}).then(res => {
 					console.log(res)
-					if (res.data.code) {
+					if (res.data.code == 200) {
 						this.isLoaded = true
-						this.$refs.paging.complete(res.data.data)
+						this.$refs.paging.complete(res.data.data.data)
 					}
 				})
 			},
 			goArticle(data) {
 				this.$Router.push({
 					path: '/pages/article/article',
+					query: {
+						id: data.cid
+					}
+				})
+			},
+			goPhoto(data) {
+				this.$Router.push({
+					path: '/pages/article/photo',
 					query: {
 						id: data.cid
 					}
@@ -119,7 +125,7 @@
 					// 即删除整个匹配文本
 					return ''
 				}).replace(/\|</g, '<').replace(/>\|/g, '>')
-			
+
 			},
 		}
 	}

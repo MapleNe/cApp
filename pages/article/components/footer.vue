@@ -31,8 +31,8 @@
 			</view>
 		</view>
 		<u-row customStyle="margin-top: 20rpx;flex-wrap:wrap;">
-			<u-row v-if="data &&data.category && data.category.length">
-				<view @click.stop="goCategory(data.category[0].mid)" style="border-radius: 10rpx;
+			<u-row v-if="data &&data.category && data.category.mid">
+				<view @click.stop="goCategory(data.category.mid)" style="border-radius: 10rpx;
 					padding: 8rpx 20rpx ;
 					text-align: center;
 					font-size: 14px;
@@ -40,10 +40,10 @@
 					margin-right: 10rpx;
 					margin-top: 10rpx;
 					color: #85a3ff; ">
-					<text>{{data.category[0].name}}</text>
+					<text>{{data.category.name}}</text>
 				</view>
 			</u-row>
-			<view v-if="data.tag.length>0" style="display: flex;">
+			<view v-if="data.tag && data.tag.length>0" style="display: flex;">
 				<block v-for="(item,index) in data.tag" :key="index">
 					<view style="
 						font-size: 26rpx;

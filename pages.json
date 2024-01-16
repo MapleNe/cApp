@@ -50,7 +50,7 @@
 			"perm": "login"
 		},
 		{
-			"path": "pages/article/circle",
+			"path": "pages/article/photo",
 			"style": {
 				"navigationBarTitleText": "",
 				"enablePullDownRefresh": false
@@ -252,6 +252,23 @@
 		},
 		{
 			"path" : "pages/user/tracking",
+			"style" : 
+			{
+				"navigationBarTitleText" : "",
+				"enablePullDownRefresh" : false
+			}
+		},
+		{
+			"path" : "pages/user/product",
+			"style" : 
+			{
+				"navigationBarTitleText" : "",
+				"enablePullDownRefresh" : false
+			},
+			"name":"myProduct"
+		},
+		{
+			"path" : "pages/article/components/preview_photo/preview_photo",
 			"style" : 
 			{
 				"navigationBarTitleText" : "",

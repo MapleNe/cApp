@@ -42,7 +42,7 @@
 					type: 'finance'
 				}).then(res => {
 					console.log(res)
-					this.$refs.paging.complete(res.data.data)
+					this.$refs.paging.complete(res.data.data.data)
 					setTimeout(() => {
 						this.loading = false
 					}, 500)
@@ -69,7 +69,7 @@
 				})
 			},
 			clearNotice() {
-				this.$http.post('/user/setRead', {
+				this.$http.post('/user/clearNum', {
 					type: 'finance'
 				}).then(res => {
 					console.log(res)
