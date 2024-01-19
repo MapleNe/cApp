@@ -41,7 +41,7 @@
 				<u-row align="top" justify="space-between"
 					style="margin-top: 30rpx;background: #85a3ff28;border-radius: 20rpx;box-shadow: 1rpx 1rpx 2rpx rgba(0, 0, 0, 0.06);">
 					<u-col :span="5.8">
-						<image :src="article.images[0]" mode="heightFix"
+						<image :src="article.images[0]" mode="aspectFill"
 							style="border-radius: 20rpx;height: 380rpx;width: 260rpx; background: #f7f7f7;"></image>
 					</u-col>
 					<u-col :span="5">
@@ -107,7 +107,7 @@
 							<i class="ess ripple" :class="article.isMark?'icon-star_fill':'icon-star_line'"
 								style="font-size: 60rpx;" :style="{color:article.isMark?'#f2ba49':''}"
 								@click="mark()"></i>
-							<text>{{article.marks?article.marks:0}}</text>
+							<text>{{article && article.marks}}</text>
 						</view>
 
 					</u-row>
@@ -740,7 +740,6 @@
 					id: this.article.cid
 				}).then(res => {
 					if (res.data.code == 200) {
-						uni.$u.toast(res.data.msg)
 						this.article.isLike = !this.article.isLike
 						this.article.likes += this.article.isLike ? 1 : -1;
 					}
@@ -751,9 +750,12 @@
 					id: this.article.cid
 				}).then(res => {
 					if (res.data.code == 200) {
-						uni.$u.toast(res.data.msg)
 						this.article.isMark = !this.article.isMark
-						this.article.marks += this.article.marks ? 1 : -1;
+						if(this.article.isMark && this.article.marks){
+							this.article.marks +=1
+						}else{
+							this.article.marks -=1
+						}
 					}
 				})
 			},

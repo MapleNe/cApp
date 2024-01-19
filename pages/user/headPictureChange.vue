@@ -118,22 +118,18 @@
 			getMyHead() {
 				this.$http.get('/headpicture/list', {
 					params: {
-						limit: 50
+						limit: 50,
+						self:1
 					}
 				}).then(res => {
-					if (res.data.code) {
+					if (res.data.code==200) {
 						this.myHead = res.data.data.data
 					}
 				})
 			},
 			setHeadPicture(data) {
-				let opt = this.userInfo.opt
-				if (!opt) {
-					opt = {}
-				}
-				opt.head_picture = data.id
-				this.$http.post('/user/userEdit', {
-					opt: JSON.stringify(opt)
+				this.$http.post('/headpicture/set', {
+					id:data.id
 				}).then(res => {
 					console.log(res)
 					if (res.data.code == 200) {
@@ -168,10 +164,10 @@
 				})
 			},
 			async addHead() {
-				console.log(this.userInfo.groupKey, this.userInfo.isvip)
-				if (!this.userInfo.isvip && this.userInfo.groupKey !== 'administrator' && this.userInfo.groupKey !==
-					'editor') {
-					uni.$u.toast('非会员用户无法使用');
+				let permission = false
+				if (this.userInfo.group == 'administrator' || this.userInfo.group == 'editor') permission = true;
+				if (!permission && !this.userInfo.isVip) {
+					uni.$u.toast('非会员用户或权限不足');
 					return;
 				}
 				if (this.uploadHeadPic == null || this.uploadHeadPic == '') {
@@ -186,9 +182,9 @@
 				if (headImg) {
 					this.$http.post('/headpicture/add', {
 						name: `用户${this.userInfo.uid}`,
-						link:headImg
+						link: headImg
 					}).then(res => {
-						if (res.data.code==200){
+						if (res.data.code == 200) {
 							this.setHeadPicture(res.data.data)
 						}
 						uni.hideLoading()

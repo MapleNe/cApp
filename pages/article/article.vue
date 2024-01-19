@@ -130,7 +130,7 @@
 							<view style="display: flex; flex-direction: column;align-items: center;"
 								@click="$refs.reward.open()">
 								<i class="ess icon-copper_coin_line" style="font-size: 44rpx;"></i>
-								<u-text text="发电" size="12"></u-text>
+								<u-text text="发电" size="12" color="#999"></u-text>
 							</view>
 							<view style="display: flex; flex-direction: column;align-items: center;"
 								@click="$u.throttle(mark(),1000,true)">
@@ -138,7 +138,7 @@
 									:style="{color:article && article.isMark?'#85a3ff':''}"
 									:class="{'animate__animated animate__pulse':article && article.isMark}"></i>
 
-								<u-text text="收藏" size="12"></u-text>
+								<text style="font-size: 24rpx;color: #999;">{{article && article.marks}}</text>
 							</view>
 
 							<view style="display: flex; flex-direction: column;align-items: center;"
@@ -146,7 +146,7 @@
 								<i class="ess icon-thumb_up_2_line" style="font-size: 44rpx;"
 									:style="{color:article && article.isLike?'#85a3ff':''}"
 									:class="{'animate__animated animate__pulse':article && article.isLike}"></i>
-								<u-text text="点赞" size="12"></u-text>
+								<text style="font-size: 24rpx;color: #999;">{{article && article.likes}}</text>
 							</view>
 						</u-row>
 					</u-col>
@@ -163,7 +163,7 @@
 				style="background: #85a3ff0a;height: auto;min-height: 60px;max-height: 100px;border-radius: 20rpx;padding: 8rpx 16rpx;">
 			</editor>
 			<u-row customStyle="margin-top:20rpx" justify="space-between">
-				<u-col span="2">
+				<u-col span="3">
 					<u-row justify="space-between">
 						<block v-for="(item,index) in cBtn" :key="index">
 							<i class="ess" :class="item.icon" style="font-size: 44rpx;" @click="cBtnTap(item.name)"></i>
@@ -205,6 +205,19 @@
 					:activeStyle="{color: '#303133',fontWeight: 'bold',transform: 'scale(1.05)'}"
 					:inactiveStyle="{color: '#606266',transform: 'scale(1)'}" @change="emojiIndex = $event.index"
 					style="position: static;"></u-tabs>
+			</block>
+			<block v-if="showComemntBtn=='颜色'">
+				<u-row justify="space-between" style="margin-top: 30rpx;">
+					<u-col :span="6">
+						<u-row justify="space-between">
+							<block v-for="(color,index) in colors" :key="index">
+								<text :style="{background:color}" style="padding: 15rpx;border-radius: 50rpx;"
+									@tap.stop="colorTap(color)"></text>
+							</block>
+						</u-row>
+					</u-col>
+					<i class="ess icon-eraser_line" style="font-size: 40rpx;" @tap.stop="editorCtx.removeFormat()"></i>
+				</u-row>
 			</block>
 		</u-popup>
 		<!-- 子评论 -->
@@ -422,12 +435,18 @@
 					}
 				],
 				cBtn: [{
-					name: '表情',
-					icon: 'icon-emoji_line',
-				}, {
-					name: '图片',
-					icon: 'icon-pic_line',
-				}],
+						name: '表情',
+						icon: 'icon-emoji_line',
+					}, {
+						name: '图片',
+						icon: 'icon-pic_line',
+					},
+					{
+						name: '颜色',
+						icon: 'icon-palette_line'
+					}
+				],
+				colors: ['#85A3ff', '#5BD784', '#FFA600', '#0DD0F2', '#FB4F14', '#000000E6'],
 				share: [{
 						name: '微信',
 						icon: 'weixin-fill',
@@ -498,9 +517,7 @@
 		},
 		onUnload() {
 			// 取消监听
-			uni.offKeyboardHeightChange(data => {
-
-			})
+			uni.offKeyboardHeightChange(data => {})
 		},
 		methods: {
 			shareTap,
@@ -518,13 +535,20 @@
 				})
 			},
 			cBtnTap(name) {
+				let perimission = false
+				let userInfo = this.$store.state.userInfo
+				if (userInfo.group == 'administrator' || userInfo.group == 'editor' || userInfo.isVip) {
+					perimission = true
+				}
 				if (name == '图片') {
 					this.chooseImage()
 					return;
 				}
+				if (name == '颜色' && !perimission) {
+					return
+				}
 				if (name == this.showComemntBtn) this.showComemntBtn = null;
 				else this.showComemntBtn = name
-				console.log(name)
 			},
 			async chooseImage() {
 				if (this.images.length >= 6) {
@@ -684,8 +708,8 @@
 					id: this.article.cid
 				}).then(res => {
 					if (res.data.code == 200) {
-						uni.$u.toast(res.data.msg)
 						this.article.isLike = !this.article.isLike
+						this.article.likes += this.article.isLike ? 1 : -1;
 					}
 				})
 			},
@@ -694,8 +718,12 @@
 					id: this.article.cid
 				}).then(res => {
 					if (res.data.code == 200) {
-						uni.$u.toast(res.data.msg)
 						this.article.isMark = !this.article.isMark
+						if(this.article.isMark && this.article.marks){
+							this.article.marks +=1
+						}else{
+							this.article.marks -=1
+						}
 					}
 				})
 			},
@@ -867,6 +895,9 @@
 						})
 					}
 				})
+			},
+			colorTap(color) {
+				this.editorCtx.format('color', color)
 			}
 		}
 	}

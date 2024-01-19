@@ -2,8 +2,14 @@
 	<view>
 		<u-navbar autoBack bg-color="rgba(0,0,0,0)" left-icon="close" fixed left-icon-color="white"
 			height="80"></u-navbar>
-		<image src="/static/login.png" mode="aspectFill" style="width: 100%;height: 400rpx;"></image>
-		<view style="margin: 40rpx;" v-show="!isForget">
+		<view style="position: relative;top: 0;">
+			<image src="/static/login.jpg" mode="aspectFill" style="width: 100%;height: 400rpx;"></image>
+			<view style="width: 100%;position: absolute;bottom: 0;">
+				<view style="background: white;padding: 20rpx;border-radius: 20rpx 20rpx 0 0;">
+				</view>
+			</view>
+		</view>
+		<view style="margin: 40rpx;margin-top: 20rpx;" v-show="!isForget">
 			<u-text :text="isLogin?'用户登录':'用户注册'" size="17" bold></u-text>
 			<!-- 登录用 -->
 			<view v-show="isLogin">
@@ -21,9 +27,12 @@
 					customStyle="padding:15rpx 0 0 0" border="bottom" v-model="username">
 				</u--input>
 				<u-gap></u-gap>
-
 				<u--input placeholder="密码" type="password" prefixIcon="lock" prefixIconStyle="font-size:40rpx"
 					customStyle="padding:15rpx 0 0 0" border="bottom" v-model="password">
+				</u--input>
+				<u-gap></u-gap>
+				<u--input placeholder="确认密码" type="password" prefixIcon="lock" prefixIconStyle="font-size:40rpx"
+					customStyle="padding:15rpx 0 0 0" border="bottom" v-model="password2">
 				</u--input>
 				<u-gap></u-gap>
 				<u--input placeholder="邮箱" prefixIcon="email" prefixIconStyle="font-size:40rpx"
@@ -41,12 +50,6 @@
 							<u-button @tap="getCode" plain color="#85a3ff" size="mini">{{tips}}</u-button>
 						</view>
 					</u-row>
-					<u-gap></u-gap>
-				</view>
-				<view v-else>
-					<u--input placeholder="确认密码" type="password" prefixIcon="lock" prefixIconStyle="font-size:40rpx"
-						customStyle="padding:15rpx 0 0 0" border="bottom" v-model="password2">
-					</u--input>
 				</view>
 				<view v-if="config.isInvite">
 					<u-gap></u-gap>
@@ -75,9 +78,9 @@
 				</u-row>
 			</view>
 
-			<view style="margin-top: 40rpx;">
-				<u-button :text="isLogin?'登录':'注册'" :hairline="false" color="#85a3ff" size="normal" loading-size="10"
-					customStyle="width:300rpx; height:80rpx;border-radius:10rpx;box-shadow:0 0 9rpx 0 #85a3ff"
+			<view style="margin-top: 20rpx;">
+				<u-button :text="isLogin?'登录':'注册'" shape="circle" :hairline="false" color="#85a3ff" size="normal"
+					loading-size="10" customStyle="width:300rpx; height:70rpx;box-shadow:0 0 9rpx 0 #85a3ff"
 					@click="isLogin?login():register()"></u-button>
 			</view>
 			<u-gap height="60"></u-gap>
@@ -93,7 +96,7 @@
 				</u-row>
 			</u-row>
 		</view>
-		<view style="margin: 40rpx;" v-show="isForget">
+		<view style="margin: 40rpx;margin-top: 20rpx;" v-show="isForget">
 			<u-text text="找回密码" size="17" bold></u-text>
 			<u--input placeholder="用户名" prefixIcon="email" prefixIconStyle="font-size:40rpx"
 				customStyle="padding:15rpx 0 0 0" border="bottom" v-model="account">
@@ -274,7 +277,7 @@
 						setTimeout(() => {
 							this.$Router.back(1)
 						}, 2000)
-					} 
+					}
 					uni.$u.toast(res.data.msg)
 				}).catch(err => {
 					console.log(err)
